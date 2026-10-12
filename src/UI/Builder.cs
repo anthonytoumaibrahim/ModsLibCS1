@@ -34,6 +34,26 @@ namespace ModsLibCS1.UI
         {
             Theme = theme;
             Atlas = atlas;
+            LabelWidth = theme.LabelWidth;
+        }
+
+        /// <summary>
+        /// The column the rows' names stand in (the theme's 196 to begin with). A panel may widen it
+        /// for a page whose names are long (<see cref="NameWidth"/>); every row built after the
+        /// change lines up on the new width.
+        /// </summary>
+        public float LabelWidth { get; set; }
+
+        /// <summary>
+        /// Room kept free at the right end of every row for a reset button (<see cref="AddReset"/>);
+        /// 0, the default, keeps none.
+        /// </summary>
+        public float ResetColumn { get; set; }
+
+        /// <summary>Where a row's right-hand parts end.</summary>
+        private float Right(UIComponent parent)
+        {
+            return parent.width - ResetColumn;
         }
 
         /// <summary>
@@ -237,9 +257,9 @@ namespace ModsLibCS1.UI
             // overcast to" on the left, "400% (every 0.8 s)" on the right. Both used to run into
             // the slider.
             SliderRow row = new SliderRow { Format = format, ShowValue = ShowValue };
-            float labelWidth = Theme.LabelWidth;
+            float labelWidth = LabelWidth;
             float valueWidth = Theme.ValueWidth;
-            float sliderWidth = parent.width - labelWidth - valueWidth - 3f * Theme.Gap;
+            float sliderWidth = Right(parent) - labelWidth - valueWidth - 3f * Theme.Gap;
 
             row.Name = row.Add(RowName(parent, label, y, labelWidth));
 
@@ -254,7 +274,7 @@ namespace ModsLibCS1.UI
             row.Slider = slider;
 
             UILabel readout = row.Add(AddLabel(parent, format(value),
-                new Vector3(parent.width - valueWidth, y + 8f), Theme.BoxedValues ? 0.75f : Theme.TextScale));
+                new Vector3(Right(parent) - valueWidth, y + 8f), Theme.BoxedValues ? 0.75f : Theme.TextScale));
             readout.autoSize = false;
             readout.size = new Vector2(valueWidth, 20f);
             readout.textAlignment = UIHorizontalAlignment.Right;
@@ -347,7 +367,43 @@ namespace ModsLibCS1.UI
             name.autoSize = false;
             name.size = new Vector2(width, 20f);
             Spaced(name);
+            FitName(name, width);
             return name;
+        }
+
+        /// <summary>
+        /// How wide a row's name is in this skin (capitals and their spacing included), in UI
+        /// units: what a panel measures to choose its <see cref="LabelWidth"/>.
+        /// </summary>
+        public float NameWidth(string label)
+        {
+            string shown = Caps(label) ?? string.Empty;
+            return Mathf.Ceil(Measure(shown, Theme.TextScale) + (Theme.Caps ? shown.Length : 0));
+        }
+
+        /// <summary>
+        /// A name wider than its column is drawn smaller until it fits (down to 75% of the row's
+        /// text size), never cut off: a fixed-size label clips what runs past its edge.
+        /// </summary>
+        private void FitName(UILabel name, float width)
+        {
+            float wide = NameWidth(name.text);
+            if (wide <= width || wide <= 0f)
+                return;
+
+            float share = (width - 2f) / wide;
+            if (share >= 0.75f)
+            {
+                name.textScale = Theme.TextScale * share;
+                return;
+            }
+
+            // Too long even at 75%: two lines, centred on the row, a little smaller.
+            name.textScale = Theme.TextScale * 0.85f;
+            name.wordWrap = true;
+            name.verticalAlignment = UIVerticalAlignment.Middle;
+            name.relativePosition += new Vector3(0f, -7f);
+            name.size = new Vector2(width, 32f);
         }
 
         // ------------------------------------------------------------------ on/off
@@ -361,13 +417,13 @@ namespace ModsLibCS1.UI
             ToggleRow row = new ToggleRow();
 
             UICheckBox box = row.Add(parent.AddUIComponent<UICheckBox>());
-            box.size = new Vector2(parent.width, 22f);
+            box.size = new Vector2(Right(parent), 22f);
             box.relativePosition = new Vector3(0f, y + 6f);
 
             Vector2 markSize = Vanilla ? new Vector2(16f, 16f) : SpriteSize(S.ToggleOff, new Vector2(16f, 16f));
             Vector3 markAt = Theme.Toggle == ToggleShape.TickLeft
                 ? new Vector3(0f, Vanilla ? 2f : Mathf.Round((22f - markSize.y) * 0.5f))
-                : new Vector3(Theme.LabelWidth + Theme.Gap, Mathf.Round((22f - markSize.y) * 0.5f));
+                : new Vector3(LabelWidth + Theme.Gap, Mathf.Round((22f - markSize.y) * 0.5f));
 
             UISprite background = box.AddUIComponent<UISprite>();
             background.atlas = Atlas;
@@ -394,8 +450,9 @@ namespace ModsLibCS1.UI
             else
             {
                 box.label.autoSize = false;
-                box.label.size = new Vector2(Theme.LabelWidth, 20f);
+                box.label.size = new Vector2(LabelWidth, 20f);
                 box.label.relativePosition = new Vector3(0f, 2f);
+                FitName(box.label, LabelWidth);
             }
             row.Check = box;
             row.Name = box.label;
@@ -454,11 +511,11 @@ namespace ModsLibCS1.UI
                 return row;
             }
 
-            row.Name = row.Add(RowName(parent, label, y, Theme.LabelWidth));
+            row.Name = row.Add(RowName(parent, label, y, LabelWidth));
             AddRowLine(parent, y, row);
 
-            float x = Theme.LabelWidth + Theme.Gap;
-            float available = parent.width - x;
+            float x = LabelWidth + Theme.Gap;
+            float available = Right(parent) - x;
             const float scale = 0.75f;
 
             float[] textWidths = new float[count];
@@ -585,6 +642,63 @@ namespace ModsLibCS1.UI
             SetAccent(button, false);
             return button;
         }
+
+        /// <summary>
+        /// A row's reset button: the library's own round-arrow icon, no text, at the right end of
+        /// the row (keep <see cref="ResetColumn"/> free for it). Its sprite always comes from the
+        /// library's sheet, Vanilla too; null when the sheet is missing (the row works without
+        /// it). The caller wires the click and enables it while the row is off its default
+        /// (<see cref="SetResetEnabled"/>).
+        /// </summary>
+        public UIButton AddReset(UIComponent parent, float y, string tooltip)
+        {
+            UITextureAtlas ours = UI.Atlas.Ours;
+            if (ours == null || ours[ResetSprite] == null)
+                return null;
+
+            const float size = 22f;
+            UIButton button = parent.AddUIComponent<UIButton>();
+            button.atlas = ours;
+            button.size = new Vector2(size, size);
+            button.relativePosition = new Vector3(parent.width - size, y + Mathf.Round((Theme.RowHeight - size) * 0.5f));
+            button.canFocus = false;
+            button.tooltip = tooltip;
+
+            // A soft square behind the icon on hover, from the skin's own buttons where it has them.
+            string hover = S.OwnSheet ? S.ButtonHover : "st-button-hover";
+            if (ours[hover] != null)
+            {
+                button.hoveredBgSprite = hover;
+                button.pressedBgSprite = hover;
+            }
+
+            Vector2 glyph = new Vector2(14f, 14f);
+            UITextureAtlas.SpriteInfo info = ours[ResetSprite];
+            if (info.texture != null)
+                glyph = info.pixelSize;
+
+            UISprite icon = button.AddUIComponent<UISprite>();
+            icon.atlas = ours;
+            icon.spriteName = ResetSprite;
+            icon.size = glyph;
+            icon.relativePosition = new Vector3(Mathf.Round((size - glyph.x) * 0.5f), Mathf.Round((size - glyph.y) * 0.5f));
+            icon.isInteractive = false;
+
+            return button;
+        }
+
+        /// <summary>A reset button lit (the row is off its default) or faded and unclickable.</summary>
+        public static void SetResetEnabled(UIButton reset, bool enabled)
+        {
+            if (reset == null || reset.isEnabled == enabled && reset.opacity == (enabled ? 1f : 0.3f))
+                return;
+
+            reset.isEnabled = enabled;
+            reset.opacity = enabled ? 1f : 0.3f;
+        }
+
+        /// <summary>The library's reset icon, shared by every skin.</summary>
+        public const string ResetSprite = "reset";
 
         /// <summary>
         /// The accent look (Save while there are unsaved changes) or the plain one. Vanilla has
@@ -993,7 +1107,7 @@ namespace ModsLibCS1.UI
             row.Name = row.Add(RowName(parent, label, y, 200f));
 
             UIButton button = row.Add(AddButton(parent, key.ToLocalizedString("KEYNAME"),
-                new Vector2(170f, 26f), new Vector3(parent.width - 170f, y + 4f)));
+                new Vector2(170f, 26f), new Vector3(Right(parent) - 170f, y + 4f)));
             row.Button = button;
 
             bool editing = false;

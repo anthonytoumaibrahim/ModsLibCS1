@@ -62,6 +62,10 @@ public static class SpriteMaker
         // game's fields use its 'EmptySprite', which lives in the game's atlas, not ours).
         sprites.Add(Box("white", 4, 4, 0, Color.White, Color.White, Color.Transparent, 0, 0));
 
+        // A row's reset button, every skin: a round arrow, drawn here from an arc and a triangle
+        // (no third-party icon).
+        sprites.Add(ResetArrow("reset", 14, Color.FromArgb(235, 255, 255, 255)));
+
         int width, height;
         Pack(sprites, out width, out height);
 
@@ -338,6 +342,46 @@ public static class SpriteMaker
 
         list.Add(Box(x + "hud", 20, 20, 8, Rgba(48, 70, 92, .62), Rgba(48, 70, 92, .62), White(.10), 1, 9));
         list.Add(Box(x + "hud-hover", 20, 20, 8, blueTop, blueBottom, Color.Transparent, 0, 9));
+    }
+
+    /// <summary>
+    /// A clockwise round arrow: three quarters and a bit of a circle, open at the top left, the
+    /// arrowhead at its end pointing on round the circle.
+    /// </summary>
+    private static Sprite ResetArrow(string name, int size, Color colour)
+    {
+        Graphics g;
+        Sprite s = New(name, size, size, 0, 0, 0, 0, out g);
+        using (g)
+        {
+            float c = size / 2f, r = size / 2f - 2.6f;
+            const float start = 250f, sweep = 285f;   // GDI+ degrees: clockwise on screen, 0 = right
+
+            using (Pen pen = new Pen(colour, 1.9f))
+            {
+                pen.StartCap = LineCap.Round;
+                pen.EndCap = LineCap.Flat;
+                g.DrawArc(pen, c - r, c - r, 2f * r, 2f * r, start, sweep);
+            }
+
+            // The arrowhead at the arc's end, pointing along it (clockwise).
+            double end = (start + sweep) * Math.PI / 180.0;
+            PointF tip = new PointF((float)(c + r * Math.Cos(end)), (float)(c + r * Math.Sin(end)));
+            PointF along = new PointF((float)-Math.Sin(end), (float)Math.Cos(end));   // clockwise tangent
+            PointF outward = new PointF((float)Math.Cos(end), (float)Math.Sin(end));
+            const float length = 4.2f, half = 3.1f;
+            PointF point = new PointF(tip.X + along.X * length * 0.6f, tip.Y + along.Y * length * 0.6f);
+            PointF back = new PointF(tip.X - along.X * length * 0.4f, tip.Y - along.Y * length * 0.4f);
+            PointF[] head =
+            {
+                point,
+                new PointF(back.X + outward.X * half, back.Y + outward.Y * half),
+                new PointF(back.X - outward.X * half, back.Y - outward.Y * half),
+            };
+            using (SolidBrush b = new SolidBrush(colour))
+                g.FillPolygon(b, head);
+        }
+        return s;
     }
 
     /// <summary>A tab: top corners rounded, square at the bottom where it meets the band.</summary>

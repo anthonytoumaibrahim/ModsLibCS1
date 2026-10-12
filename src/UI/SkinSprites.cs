@@ -25,6 +25,12 @@ namespace ModsLibCS1.UI
         /// <summary>Frosted: the darker band under the tabs, and the line between rows.</summary>
         public string Band, RowLine;
 
+        /// <summary>
+        /// A row's reset icon. In every skin's list that has the library's sheet; Vanilla's reset
+        /// button takes it from the sheet too (Builder.AddReset).
+        /// </summary>
+        public string Reset;
+
         /// <summary>True for the library's own sheet, false for the game's atlas.</summary>
         public bool OwnSheet;
 
@@ -134,6 +140,7 @@ namespace ModsLibCS1.UI
             s.SegSelected = x + "seg-selected";
             s.Hud = x + "hud";
             s.HudHover = x + "hud-hover";
+            s.Reset = "reset";
             return s;
         }
 
@@ -147,7 +154,7 @@ namespace ModsLibCS1.UI
                 Field, FieldHover, FieldFocus, Selection,
                 Drop, DropHover, DropFocus, DropDisabled, DropArrow, List, ListHover, ListHighlight,
                 Track, Fill, Thumb, SegStrip, SegHover, SegSelected, ToggleOff, ToggleOn, Value,
-                TabStrip, Tab, TabHover, TabPressed, TabSelected, Hud, HudHover, Band, RowLine,
+                TabStrip, Tab, TabHover, TabPressed, TabSelected, Hud, HudHover, Band, RowLine, Reset,
             };
 
             List<string> all = new List<string>();
