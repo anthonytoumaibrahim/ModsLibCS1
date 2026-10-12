@@ -1,4 +1,4 @@
-# Offline checks of the sprite sheet, the skins' sprite names and the choice-row fit rule.
+﻿# Offline checks of the sprite sheet, the skins' sprite names and the choice-row fit rule.
 # The three files are pure (no Unity), so their SOURCE is compiled here; no game needed.
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tools\test-sheet.ps1
@@ -37,7 +37,7 @@ Check "sheet.png matches the table's size" ($img.Width -eq $table.Width -and $im
 $img.Dispose()
 
 $used = @{}
-foreach ($skin in 'SeeThrough', 'GameBlue') {
+foreach ($skin in 'SeeThrough', 'GameBlue', 'Frosted') {
     $sprites = [ModsLibCS1.UI.SkinSprites]::$skin.Invoke()
     $missing = @($sprites.All() | Where-Object { -not $table.Contains($_) })
     Check "$skin names only sprites in the sheet" ($missing.Count -eq 0) ($missing -join ', ')

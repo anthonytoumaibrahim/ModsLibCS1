@@ -13,6 +13,9 @@ namespace ModsLibCS1.UI
     {
         public readonly List<UIComponent> Parts = new List<UIComponent>();
 
+        /// <summary>The faint line under the row in skins that draw one; not in Parts (never greyed).</summary>
+        public UISprite Line;
+
         /// <summary>Greys the row out (or back): every part 45% opaque and not clickable.</summary>
         public void SetEnabled(bool enabled)
         {
@@ -27,6 +30,9 @@ namespace ModsLibCS1.UI
         {
             foreach (UIComponent part in Parts)
                 part.isVisible = visible;
+
+            if (Line != null)
+                Line.isVisible = visible;
         }
 
         internal T Add<T>(T component) where T : UIComponent
@@ -146,6 +152,11 @@ namespace ModsLibCS1.UI
     {
         public UIPanel Panel;
         public UISlicedSprite Strip;
+
+        /// <summary>Frosted: the blurred screen and the tint over it (the panel's own background is empty).</summary>
+        public Backdrop Backdrop;
+        public UISlicedSprite Tint;
+
         public UILabel Title;
         public UIButton Close;
         public UIDragHandle Drag;

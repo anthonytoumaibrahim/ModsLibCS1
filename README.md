@@ -8,9 +8,12 @@ picks on the mod's options page:
   switches, choice rows as a row of buttons, boxed values.
 - **Game blue**: the same layout on a deep-blue opaque panel.
 - **Vanilla**: the game's own panel look, unchanged.
+- **Frosted**: after Cities: Skylines II's photo mode: blue-grey glass over a blurred copy of the
+  screen, rounded-top tabs, capitals, tick boxes, a faint line between rows.
 
 It is built on the game's own `ColossalFramework.UI` components with its own sprite sheet, so it
-costs what the game's UI costs.
+costs what the game's UI costs. Frosted's blur adds a few small copies of the finished frame per
+frame (`FrameGrab`, the main camera's last image effect), and only while a Frosted panel is open.
 
 > **Status:** first version, not yet used by any mod or tried in-game.
 
@@ -91,6 +94,7 @@ src/UI/SkinSprites.cs   the sprite names each skin draws with (pure)
 src/UI/Atlas.cs         the library's UITextureAtlas, built once from the embedded sheet
 src/UI/SheetTable.cs    reads sheet.txt (pure); ChoiceFit.cs: buttons or dropdown (pure)
 src/UI/Rows.cs          what each Add* returns; LibLog.cs, Skin.cs
+src/UI/Backdrop.cs      Frosted's blur: FrameGrab (the frame, shrunk) + Backdrop (drawn in the panel's outline)
 sprites/                sheet.png + sheet.txt -- generated, don't edit
 tools/make-sprites.ps1  draws every sprite (SpriteMaker.cs) and packs the sheet; deterministic
 tools/test-sheet.ps1    offline checks: table vs PNG, skins vs sheet, the fit rule

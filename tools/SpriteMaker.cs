@@ -56,6 +56,7 @@ public static class SpriteMaker
         List<Sprite> sprites = new List<Sprite>();
         AddSkin(sprites, SeeThrough());
         AddSkin(sprites, GameBlue());
+        AddFrosted(sprites);
 
         // Plain white, tinted by whoever draws it: a text field's selection and cursor (the
         // game's fields use its 'EmptySprite', which lives in the game's atlas, not ours).
@@ -282,6 +283,77 @@ public static class SpriteMaker
         list.Add(Box(x + "hud-hover", 16, 16, 6, p.HudHover, p.HudHover, p.HudHoverBorder, 1, 7));
     }
 
+    // ------------------------------------------------------------------ Frosted
+
+    /// <summary>
+    /// Frosted, after Cities: Skylines II's photo mode (the mockup's .vw[data-style="photo"]):
+    /// blue-grey glass over the blurred frame, a dark title bar, rounded-top tabs (the open one
+    /// blue), a darker band under them, tick boxes, a faint line between rows. Its panel sprite is
+    /// a TINT drawn over the blur, not the panel's own background.
+    /// </summary>
+    private static void AddFrosted(List<Sprite> list)
+    {
+        const string x = "fr-";
+        Color blueTop = Hex("55bbf3"), blueBottom = Hex("2a7dd8"), accent = Hex("3fa9f0");
+
+        list.Add(Box(x + "panel", 32, 32, 14, Rgba(60, 86, 112, .58), Rgba(42, 62, 82, .62), White(.07), 1, 15));
+        list.Add(TitleStrip(x + "title", 32, 32, 13, Rgba(14, 20, 28, .94), Color.Transparent));
+        list.Add(Box(x + "close-hover", 16, 16, 6, White(.12), White(.12), Color.Transparent, 0, 7));
+        list.Add(Cross(x + "close", 14, Hex("ffffff"), 2.6f));
+
+        list.Add(Box(x + "button", 16, 16, 6, White(.15), White(.15), Color.Transparent, 0, 7));
+        list.Add(Box(x + "button-hover", 16, 16, 6, White(.24), White(.24), Color.Transparent, 0, 7));
+        list.Add(Box(x + "button-pressed", 16, 16, 6, White(.08), White(.08), Color.Transparent, 0, 7));
+        list.Add(Box(x + "accent", 16, 16, 6, accent, accent, accent, 1, 7));
+        list.Add(Box(x + "accent-hover", 16, 16, 6, Hex("63baf4"), Hex("63baf4"), Hex("63baf4"), 1, 7));
+
+        list.Add(Box(x + "field", 16, 16, 6, Rgba(10, 16, 24, .55), Rgba(10, 16, 24, .55), White(.22), 1, 7));
+        list.Add(Box(x + "field-focus", 16, 16, 6, Rgba(10, 16, 24, .55), Rgba(10, 16, 24, .55), accent, 1, 7));
+        list.Add(Box(x + "drop", 16, 16, 6, White(.15), White(.15), White(.16), 1, 7));
+        list.Add(Box(x + "drop-hover", 16, 16, 6, White(.24), White(.24), White(.16), 1, 7));
+        list.Add(Box(x + "drop-focus", 16, 16, 6, White(.15), White(.15), accent, 1, 7));
+        list.Add(Chevron(x + "arrow", 10, 6, Hex("ffffff")));
+        list.Add(Box(x + "list", 16, 16, 6, Rgba(32, 46, 60, .97), Rgba(32, 46, 60, .97), White(.16), 1, 7));
+        list.Add(Box(x + "list-hover", 12, 12, 4, White(.12), White(.12), Color.Transparent, 0, 5));
+        list.Add(Box(x + "list-highlight", 12, 12, 4, White(.18), White(.18), Color.Transparent, 0, 5));
+
+        list.Add(Track(x + "track", 4, White(.26), White(.26), false));
+        list.Add(Track(x + "fill", 4, blueBottom, blueTop, false));
+        list.Add(Thumb(x + "thumb", 14, Hex("ffffff"), Color.Transparent, 0, true));
+
+        list.Add(Box(x + "seg-strip", 20, 20, 7, White(.12), White(.12), Color.Transparent, 0, 8));
+        list.Add(Box(x + "seg-hover", 16, 16, 5, White(.20), White(.20), Color.Transparent, 0, 6));
+        list.Add(Box(x + "seg-selected", 16, 16, 5, blueTop, blueBottom, Color.Transparent, 0, 6));
+
+        list.Add(TickBox(x + "tick-off", 18, 4, Rgba(14, 22, 30, .78), White(.55), 1.5f, Color.Empty));
+        list.Add(TickBox(x + "tick-on", 18, 4, Rgba(14, 22, 30, .78), Hex("ffffff"), 1.5f, Hex("ffffff")));
+
+        list.Add(TopTab(x + "tab", White(.17), White(.17)));
+        list.Add(TopTab(x + "tab-hover", White(.26), White(.26)));
+        list.Add(TopTab(x + "tab-selected", blueTop, blueBottom));
+        list.Add(Box(x + "band", 4, 4, 0, Rgba(14, 22, 30, .24), Rgba(14, 22, 30, .24), Color.Transparent, 0, 0));
+
+        list.Add(Line(x + "rule", White(.16)));
+        list.Add(Line(x + "row-line", White(.10)));
+
+        list.Add(Box(x + "hud", 20, 20, 8, Rgba(48, 70, 92, .62), Rgba(48, 70, 92, .62), White(.10), 1, 9));
+        list.Add(Box(x + "hud-hover", 20, 20, 8, blueTop, blueBottom, Color.Transparent, 0, 9));
+    }
+
+    /// <summary>A tab: top corners rounded, square at the bottom where it meets the band.</summary>
+    private static Sprite TopTab(string name, Color top, Color bottom)
+    {
+        Graphics g;
+        Sprite s = New(name, 20, 16, 8, 8, 8, 1, out g);
+        using (g)
+        using (GraphicsPath path = TopRounded(0, 0, 20, 16, 7))
+        using (Brush b = top == bottom
+            ? (Brush)new SolidBrush(top)
+            : new LinearGradientBrush(new PointF(0, 0), new PointF(0, 16), top, bottom))
+            g.FillPath(b, path);
+        return s;
+    }
+
     // ------------------------------------------------------------------ shapes
 
     private static Sprite New(string name, int w, int h, int l, int r, int t, int b, out Graphics g)
@@ -298,7 +370,7 @@ public static class SpriteMaker
 
     /// <summary>A rounded box: fill (a vertical gradient when top != bottom) inside a border ring.</summary>
     private static Sprite Box(string name, int w, int h, float radius, Color top, Color bottom, Color border,
-        int borderWidth, int slice)
+        float borderWidth, int slice)
     {
         Graphics g;
         Sprite s = New(name, w, h, slice, slice, slice, slice, out g);
@@ -429,16 +501,22 @@ public static class SpriteMaker
 
     private static Sprite TickBox(string name, Color fill, Color border, Color tick)
     {
-        Sprite s = Box(name, 16, 16, 3, fill, fill, border, 1, 0);
+        return TickBox(name, 16, 3, fill, border, 1f, tick);
+    }
+
+    private static Sprite TickBox(string name, int size, float radius, Color fill, Color border, float borderWidth, Color tick)
+    {
+        Sprite s = Box(name, size, size, radius, fill, fill, border, borderWidth, 0);
         if (tick.A > 0)
         {
+            float k = size / 16f;
             using (Graphics g = Graphics.FromImage(s.Bitmap))
-            using (Pen pen = new Pen(tick, 2f))
+            using (Pen pen = new Pen(tick, 2f * k))
             {
                 g.SmoothingMode = SmoothingMode.AntiAlias;
                 pen.StartCap = pen.EndCap = LineCap.Round;
                 pen.LineJoin = LineJoin.Round;
-                g.DrawLines(pen, new[] { new PointF(4f, 8.2f), new PointF(6.8f, 11f), new PointF(12f, 5f) });
+                g.DrawLines(pen, new[] { new PointF(4f * k, 8.2f * k), new PointF(6.8f * k, 11f * k), new PointF(12f * k, 5f * k) });
             }
         }
         return s;
@@ -466,10 +544,15 @@ public static class SpriteMaker
 
     private static Sprite Cross(string name, int size, Color colour)
     {
+        return Cross(name, size, colour, 1.8f);
+    }
+
+    private static Sprite Cross(string name, int size, Color colour, float stroke)
+    {
         Graphics g;
         Sprite s = New(name, size, size, 0, 0, 0, 0, out g);
         using (g)
-        using (Pen pen = new Pen(colour, 1.8f))
+        using (Pen pen = new Pen(colour, stroke))
         {
             pen.StartCap = pen.EndCap = LineCap.Round;
             g.DrawLine(pen, 1.5f, 1.5f, size - 1.5f, size - 1.5f);

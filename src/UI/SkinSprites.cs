@@ -22,6 +22,9 @@ namespace ModsLibCS1.UI
         public string TabStrip, Tab, TabHover, TabPressed, TabSelected;
         public string Hud, HudHover;
 
+        /// <summary>Frosted: the darker band under the tabs, and the line between rows.</summary>
+        public string Band, RowLine;
+
         /// <summary>True for the library's own sheet, false for the game's atlas.</summary>
         public bool OwnSheet;
 
@@ -44,6 +47,20 @@ namespace ModsLibCS1.UI
             s.TabHover = "gb-tab-hover";
             s.TabPressed = "gb-tab-selected";
             s.TabSelected = "gb-tab-selected";
+            return s;
+        }
+
+        public static SkinSprites Frosted()
+        {
+            SkinSprites s = Ours("fr-");
+            s.ToggleOff = "fr-tick-off";
+            s.ToggleOn = "fr-tick-on";
+            s.Tab = "fr-tab";
+            s.TabHover = "fr-tab-hover";
+            s.TabPressed = "fr-tab-selected";
+            s.TabSelected = "fr-tab-selected";
+            s.Band = "fr-band";
+            s.RowLine = "fr-row-line";
             return s;
         }
 
@@ -130,7 +147,7 @@ namespace ModsLibCS1.UI
                 Field, FieldHover, FieldFocus, Selection,
                 Drop, DropHover, DropFocus, DropDisabled, DropArrow, List, ListHover, ListHighlight,
                 Track, Fill, Thumb, SegStrip, SegHover, SegSelected, ToggleOff, ToggleOn, Value,
-                TabStrip, Tab, TabHover, TabPressed, TabSelected, Hud, HudHover,
+                TabStrip, Tab, TabHover, TabPressed, TabSelected, Hud, HudHover, Band, RowLine,
             };
 
             List<string> all = new List<string>();

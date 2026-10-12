@@ -15,5 +15,11 @@ namespace ModsLibCS1.UI
 
         /// <summary>The game's own look, bit for bit. Also what any skin falls back to.</summary>
         Vanilla = 2,
+
+        /// <summary>
+        /// After Cities: Skylines II's photo mode: blue-grey glass over a blurred copy of the
+        /// screen, rounded-top tabs, capitals, tick boxes, a line between rows.
+        /// </summary>
+        Frosted = 3,
     }
 }

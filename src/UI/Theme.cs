@@ -36,6 +36,9 @@ namespace ModsLibCS1.UI
 
         /// <summary>The game's tab sprites (Vanilla).</summary>
         GameTabs,
+
+        /// <summary>Rounded-top blocks standing on a darker band, the open one blue (Frosted).</summary>
+        Blocks,
     }
 
     /// <summary>
@@ -55,6 +58,20 @@ namespace ModsLibCS1.UI
         public bool TextShadow;
         public bool HeadingRule;
         public bool HeadingCaps;
+
+        /// <summary>The heading's line runs under it, full width, rather than after it.</summary>
+        public bool HeadingLineUnder;
+
+        /// <summary>A blurred copy of the screen behind the panel (<see cref="Backdrop"/>).</summary>
+        public bool Blur;
+
+        /// <summary>Row names, buttons, tabs and choices in capitals with a little spacing.</summary>
+        public bool Caps;
+
+        /// <summary>A faint line under every control row.</summary>
+        public bool RowLines;
+
+        public bool TitleCentered;
 
         // Text
         public Color32 Text, Title, Heading, Status, Warning, Value;
@@ -88,6 +105,7 @@ namespace ModsLibCS1.UI
             {
                 case Skin.GameBlue: return GameBlue();
                 case Skin.Vanilla: return Vanilla();
+                case Skin.Frosted: return Frosted();
                 default: return SeeThrough();
             }
         }
@@ -168,6 +186,57 @@ namespace ModsLibCS1.UI
             t.Shadow = new Color32(0, 0, 0, 153);
             t.TrackHeight = 6f;
             t.ThumbSize = 20f;   // 16 px knob + its shadow
+            return t;
+        }
+
+        /// <summary>
+        /// D in the mockup, after Cities: Skylines II's photo mode (the author: "I really like its
+        /// style, rounded, see through with blur").
+        /// </summary>
+        public static Theme Frosted()
+        {
+            Theme t = new Theme();
+            t.Skin = Skin.Frosted;
+            t.Sprites = SkinSprites.Frosted();
+            t.Toggle = ToggleShape.TickLeft;
+            t.Choice = ChoiceShape.Segments;
+            t.Tabs = TabShape.Blocks;
+            t.BoxedValues = false;
+            t.TitleStrip = true;
+            t.TextShadow = true;
+            t.HeadingRule = true;
+            t.HeadingLineUnder = true;
+            t.HeadingCaps = true;
+            t.Blur = true;
+            t.Caps = true;
+            t.RowLines = true;
+            t.TitleCentered = true;
+            t.TextScale = 0.75f;
+            t.HeadingScale = 0.8f;
+            t.TitleScale = 1.05f;
+            t.TabScale = 0.75f;
+
+            t.Text = Hex(0xf3f6f9);
+            t.Title = Hex(0x46b9f0);
+            t.Heading = Hex(0xffffff);
+            t.Status = Hex(0xa8dcff);
+            t.Warning = Hex(0xffc27a);
+            t.Value = Hex(0xffffff);
+            t.TabText = Hex(0xd8e0e8);
+            t.TabHoverText = Hex(0xffffff);
+            t.TabSelectedText = Hex(0xffffff);
+            t.ButtonText = Hex(0xffffff);
+            t.AccentText = Hex(0xffffff);
+            t.FieldText = Hex(0xffffff);
+            t.Invalid = Hex(0xff7a7a);
+            t.Selection = new Color32(63, 169, 240, 255);
+            t.DropText = Hex(0xffffff);
+            t.ListText = Hex(0xd8e0e8);
+            t.SegText = Hex(0xd8e0e8);
+            t.SegSelectedText = Hex(0xffffff);
+            t.Shadow = new Color32(0, 0, 0, 90);
+            t.TrackHeight = 4f;
+            t.ThumbSize = 18f;
             return t;
         }
 

@@ -27,6 +27,9 @@ namespace ModsLibCS1.UI
         private SkinSprites S { get { return Theme.Sprites; } }
         private bool Vanilla { get { return Theme.Skin == Skin.Vanilla; } }
 
+        /// <summary>The last frame's tint (Frosted): the band under the tabs goes just above it.</summary>
+        private UIComponent _tint;
+
         private Builder(Theme theme, UITextureAtlas atlas)
         {
             Theme = theme;
@@ -111,6 +114,34 @@ namespace ModsLibCS1.UI
             }
         }
 
+        /// <summary>A name, button or tab text as the skin writes it: in capitals for Frosted.</summary>
+        public string Caps(string text)
+        {
+            return Theme.Caps && text != null ? text.ToUpperInvariant() : text;
+        }
+
+        /// <summary>Capitals get one unit between letters, as the mockup's letter-spacing.</summary>
+        private void Spaced(UITextComponent text)
+        {
+            if (Theme.Caps)
+                text.characterSpacing = 1;
+        }
+
+        /// <summary>The faint line under a control row (Frosted); not greyed with the row.</summary>
+        private void AddRowLine(UIComponent parent, float y, BuiltRow row)
+        {
+            if (!Theme.RowLines || S.RowLine == null)
+                return;
+
+            UISprite line = parent.AddUIComponent<UISprite>();
+            line.atlas = Atlas;
+            line.spriteName = S.RowLine;
+            line.size = new Vector2(parent.width, 1f);
+            line.relativePosition = new Vector3(0f, y + Theme.RowHeight - 1f);
+            line.isInteractive = false;
+            row.Line = line;
+        }
+
         public UILabel AddLabel(UIComponent parent, string text, Vector3 position, float scale)
         {
             UILabel label = parent.AddUIComponent<UILabel>();
@@ -159,7 +190,16 @@ namespace ModsLibCS1.UI
             Paint(heading, Theme.Heading);
             row.Label = heading;
 
-            if (Theme.HeadingRule && S.Rule != null)
+            if (Theme.HeadingRule && Theme.HeadingLineUnder && S.Rule != null)
+            {
+                UISprite under = row.Add(parent.AddUIComponent<UISprite>());
+                under.atlas = Atlas;
+                under.spriteName = S.Rule;
+                under.size = new Vector2(parent.width, 1f);
+                under.relativePosition = new Vector3(0f, y + 22f);
+                row.Rule = under;
+            }
+            else if (Theme.HeadingRule && S.Rule != null)
             {
                 // Measured with the spacing the caps get: one unit per character.
                 float textWidth = Measure(shown, Theme.HeadingScale) + (Theme.HeadingCaps ? shown.Length : 0);
@@ -220,6 +260,7 @@ namespace ModsLibCS1.UI
             }
             row.Value = readout;
             ShowValue(readout, format(value));
+            AddRowLine(parent, y, row);
 
             // After min/max, or the component clamps it against the default 0..100 range.
             slider.value = Mathf.Clamp(value, min, max);
@@ -284,9 +325,10 @@ namespace ModsLibCS1.UI
 
         private UILabel RowName(UIComponent parent, string label, float y, float width)
         {
-            UILabel name = AddLabel(parent, label, new Vector3(0f, y + 8f), Theme.TextScale);
+            UILabel name = AddLabel(parent, Caps(label), new Vector3(0f, y + 8f), Theme.TextScale);
             name.autoSize = false;
             name.size = new Vector2(width, 20f);
+            Spaced(name);
             return name;
         }
 
@@ -306,7 +348,7 @@ namespace ModsLibCS1.UI
 
             Vector2 markSize = Vanilla ? new Vector2(16f, 16f) : SpriteSize(S.ToggleOff, new Vector2(16f, 16f));
             Vector3 markAt = Theme.Toggle == ToggleShape.TickLeft
-                ? new Vector3(0f, 2f)
+                ? new Vector3(0f, Vanilla ? 2f : Mathf.Round((22f - markSize.y) * 0.5f))
                 : new Vector3(Theme.LabelWidth + Theme.Gap, Mathf.Round((22f - markSize.y) * 0.5f));
 
             UISprite background = box.AddUIComponent<UISprite>();
@@ -323,12 +365,13 @@ namespace ModsLibCS1.UI
             box.checkedBoxObject = check;
 
             box.label = box.AddUIComponent<UILabel>();
-            box.label.text = label;
+            box.label.text = Caps(label);
             box.label.textScale = Theme.TextScale;
+            Spaced(box.label);
             Paint(box.label, Theme.Text);
             if (Theme.Toggle == ToggleShape.TickLeft)
             {
-                box.label.relativePosition = new Vector3(24f, 3f);
+                box.label.relativePosition = new Vector3(Vanilla ? 24f : markSize.x + 10f, 3f);
             }
             else
             {
@@ -346,6 +389,7 @@ namespace ModsLibCS1.UI
                     onChanged(isChecked);
             };
 
+            AddRowLine(parent, y, row);
             return row;
         }
 
@@ -393,6 +437,7 @@ namespace ModsLibCS1.UI
             }
 
             row.Name = row.Add(RowName(parent, label, y, Theme.LabelWidth));
+            AddRowLine(parent, y, row);
 
             float x = Theme.LabelWidth + Theme.Gap;
             float available = parent.width - x;
@@ -400,7 +445,7 @@ namespace ModsLibCS1.UI
 
             float[] textWidths = new float[count];
             for (int i = 0; i < count; i++)
-                textWidths[i] = Measure(choices[i], scale);
+                textWidths[i] = Measure(Caps(choices[i]), scale) + (Theme.Caps ? choices[i].Length : 0);
 
             bool fits = ChoiceFit.Fits(textWidths, available);
             LibLog.Msg("choice '" + label + "': " + Widths(textWidths) + " of " + available.ToString("F0") +
@@ -444,8 +489,9 @@ namespace ModsLibCS1.UI
             {
                 UIButton segment = strip.AddUIComponent<UIButton>();
                 segment.atlas = Atlas;
-                segment.text = choices[i];
+                segment.text = Caps(choices[i]);
                 segment.textScale = scale;
+                Spaced(segment);
                 segment.size = new Vector2(widths[i], 26f - 2f * ChoiceFit.StripPadding);
                 segment.relativePosition = new Vector3(at, ChoiceFit.StripPadding);
                 segment.textVerticalAlignment = UIVerticalAlignment.Middle;
@@ -513,8 +559,9 @@ namespace ModsLibCS1.UI
         {
             UIButton button = parent.AddUIComponent<UIButton>();
             button.atlas = Atlas;
-            button.text = text;
+            button.text = Caps(text);
             button.textScale = Theme.TextScale;
+            Spaced(button);
             button.size = size;
             button.relativePosition = position;
             SetAccent(button, false);
@@ -656,8 +703,9 @@ namespace ModsLibCS1.UI
         {
             UIButton tab = parent.AddUIComponent<UIButton>();
             tab.atlas = Atlas;
-            tab.text = text;
+            tab.text = Caps(text);
             tab.textScale = Theme.TabScale;
+            Spaced(tab);
             tab.size = size;
             tab.relativePosition = position;
             SetTabSelected(tab, false);
@@ -681,7 +729,7 @@ namespace ModsLibCS1.UI
                     return;
 
                 default:
-                    string normal = selected ? S.TabSelected : string.Empty;
+                    string normal = selected ? S.TabSelected : (S.Tab ?? string.Empty);
                     tab.normalBgSprite = normal;
                     tab.focusedBgSprite = normal;
                     tab.hoveredBgSprite = selected ? S.TabSelected : (S.TabHover ?? string.Empty);
@@ -716,6 +764,29 @@ namespace ModsLibCS1.UI
                 strip.Background = background;
                 inset = 3f;
                 gap = 3f;
+            }
+            else if (Theme.Tabs == TabShape.Blocks)
+            {
+                gap = 4f;
+                if (S.Band != null)
+                {
+                    // The darker band the tabs stand on: from under them to the panel's bottom
+                    // margin, edge to edge, and growing with the panel (a page shown or hidden).
+                    float top = position.y + height;
+                    UISlicedSprite band = parent.AddUIComponent<UISlicedSprite>();
+                    band.atlas = Atlas;
+                    band.spriteName = S.Band;
+                    band.isInteractive = false;
+                    band.relativePosition = new Vector3(0f, top);
+                    band.size = new Vector2(parent.width, Mathf.Max(1f, parent.height - top - Theme.Margin));
+                    band.anchor = UIAnchorStyle.All;
+
+                    // Behind whatever the page already has, in front of the frame's tint.
+                    if (_tint != null && _tint.parent == parent)
+                        band.zOrder = _tint.zOrder + 1;
+
+                    strip.Background = band;
+                }
             }
             else if (Theme.Tabs == TabShape.Underline && S.Rule != null)
             {
@@ -757,7 +828,28 @@ namespace ModsLibCS1.UI
         {
             Frame frame = new Frame { Panel = panel };
             panel.atlas = Atlas;
-            panel.backgroundSprite = S.Panel;
+
+            if (Theme.Blur)
+            {
+                // A panel draws its own background before its children, so the blur and the
+                // tint over it are its first two children instead, sized with it.
+                panel.backgroundSprite = string.Empty;
+
+                frame.Backdrop = panel.AddUIComponent<Backdrop>();
+                frame.Backdrop.Radius = 14f;
+                frame.Backdrop.relativePosition = Vector3.zero;
+
+                frame.Tint = panel.AddUIComponent<UISlicedSprite>();
+                frame.Tint.atlas = Atlas;
+                frame.Tint.spriteName = S.Panel;
+                frame.Tint.isInteractive = false;
+                frame.Tint.relativePosition = Vector3.zero;
+                _tint = frame.Tint;
+            }
+            else
+            {
+                panel.backgroundSprite = S.Panel;
+            }
 
             if (Theme.TitleStrip && S.Title != null)
             {
@@ -769,12 +861,15 @@ namespace ModsLibCS1.UI
             }
 
             frame.Title = panel.AddUIComponent<UILabel>();
-            frame.Title.text = title;
+            frame.Title.text = Caps(title);
             frame.Title.textScale = Theme.TitleScale;
             frame.Title.autoSize = false;
+            Spaced(frame.Title);
             Paint(frame.Title, Theme.Title);
             if (!Vanilla)
                 frame.Title.verticalAlignment = UIVerticalAlignment.Middle;
+            if (Theme.TitleCentered)
+                frame.Title.textAlignment = UIHorizontalAlignment.Center;
 
             UIButton close = panel.AddUIComponent<UIButton>();
             close.atlas = Atlas;
@@ -809,10 +904,28 @@ namespace ModsLibCS1.UI
                 if (frame.Strip != null)
                     frame.Strip.size = new Vector2(width - 2f, bar - 1f);
 
+                if (frame.Backdrop != null)
+                {
+                    // Anchored after sizing: from then on they follow the panel's height.
+                    foreach (UIComponent layer in new UIComponent[] { frame.Backdrop, frame.Tint })
+                    {
+                        layer.anchor = UIAnchorStyle.None;
+                        layer.size = new Vector2(width, panel.height);
+                        layer.relativePosition = Vector3.zero;
+                        layer.anchor = UIAnchorStyle.All;
+                    }
+                }
+
                 if (Vanilla)
                 {
                     frame.Title.size = new Vector2(width - bar, bar);
                     frame.Title.relativePosition = new Vector3(Theme.Margin, Theme.Margin);
+                }
+                else if (Theme.TitleCentered)
+                {
+                    // Centred on the panel: as much room on the left as the close button takes.
+                    frame.Title.size = new Vector2(width - 2f * 40f, bar);
+                    frame.Title.relativePosition = new Vector3(40f, 0f);
                 }
                 else
                 {
@@ -904,6 +1017,7 @@ namespace ModsLibCS1.UI
                     onChanged();
             };
 
+            AddRowLine(parent, y, row);
             return row;
         }
 
