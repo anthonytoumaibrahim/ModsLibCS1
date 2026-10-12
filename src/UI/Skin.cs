@@ -7,7 +7,7 @@ namespace ModsLibCS1.UI
     /// </summary>
     public enum Skin
     {
-        /// <summary>A charcoal panel the sky shows through. The default.</summary>
+        /// <summary>A charcoal panel the sky shows through. (Which skin is a mod's default is the mod's.)</summary>
         SeeThrough = 0,
 
         /// <summary>The same layout on a deep-blue opaque panel.</summary>

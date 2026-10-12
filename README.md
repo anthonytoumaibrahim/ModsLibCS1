@@ -4,14 +4,15 @@ A shared UI library for Cities: Skylines 1 mods: one builder for options panels 
 switches, choice rows, tabs, text fields, key rows, dropdowns) and a choice of **skins** the player
 picks on the mod's options page:
 
-- **See-through** (default): a charcoal panel the sky shows through, thin sliders with a blue fill,
+- **See-through**: a charcoal panel the sky shows through, thin sliders with a blue fill,
   switches, choice rows as a row of buttons, boxed values.
 - **Game blue**: the same layout on a deep-blue opaque panel.
 - **Vanilla**: the game's own panel look, unchanged.
 - **Frosted**: after Cities: Skylines II's photo mode: blue-grey glass over a blurred copy of the
   screen, rounded-top tabs, capitals, tick boxes, a faint line between rows.
 
-It is built on the game's own `ColossalFramework.UI` components with its own sprite sheet, so it
+Which skin a mod starts with is that mod's choice; each mod stores the player's pick in its own
+settings. It is built on the game's own `ColossalFramework.UI` components with its own sprite sheet, so it
 costs what the game's UI costs. Frosted's blur adds a few small copies of the finished frame per
 frame (`FrameGrab`, the main camera's last image effect), and only while a Frosted panel is open.
 

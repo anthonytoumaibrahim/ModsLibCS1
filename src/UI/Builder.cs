@@ -130,8 +130,17 @@ namespace ModsLibCS1.UI
         /// <summary>The faint line under a control row (Frosted); not greyed with the row.</summary>
         private void AddRowLine(UIComponent parent, float y, BuiltRow row)
         {
+            row.Line = AddRowLine(parent, y);
+        }
+
+        /// <summary>
+        /// The faint line under a row the caller builds itself (a mod's own kind of row), in skins
+        /// that draw one; null in the others.
+        /// </summary>
+        public UISprite AddRowLine(UIComponent parent, float y)
+        {
             if (!Theme.RowLines || S.RowLine == null)
-                return;
+                return null;
 
             UISprite line = parent.AddUIComponent<UISprite>();
             line.atlas = Atlas;
@@ -139,7 +148,7 @@ namespace ModsLibCS1.UI
             line.size = new Vector2(parent.width, 1f);
             line.relativePosition = new Vector3(0f, y + Theme.RowHeight - 1f);
             line.isInteractive = false;
-            row.Line = line;
+            return line;
         }
 
         public UILabel AddLabel(UIComponent parent, string text, Vector3 position, float scale)
@@ -325,7 +334,16 @@ namespace ModsLibCS1.UI
 
         private UILabel RowName(UIComponent parent, string label, float y, float width)
         {
-            UILabel name = AddLabel(parent, Caps(label), new Vector3(0f, y + 8f), Theme.TextScale);
+            return AddName(parent, label, new Vector3(0f, y + 8f), width);
+        }
+
+        /// <summary>
+        /// A row's name as the skin writes it (capitals in Frosted), <paramref name="width"/> wide,
+        /// for rows the caller builds itself.
+        /// </summary>
+        public UILabel AddName(UIComponent parent, string label, Vector3 position, float width)
+        {
+            UILabel name = AddLabel(parent, Caps(label), position, Theme.TextScale);
             name.autoSize = false;
             name.size = new Vector2(width, 20f);
             Spaced(name);
