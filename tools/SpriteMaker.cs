@@ -313,7 +313,9 @@ public static class SpriteMaker
         const string x = "fr-";
         Color blueTop = Hex("55bbf3"), blueBottom = Hex("2a7dd8"), accent = Hex("3fa9f0");
 
-        list.Add(Box(x + "panel", 32, 32, 14, Rgba(60, 86, 112, .58), Rgba(42, 62, 82, .62), White(.07), 1, 15));
+        // A deeper blue and denser than at first (the author: "hard to read the text" against a bright
+        // sky): the glass keeps the blur showing through, with a clearer hue of its own.
+        list.Add(Box(x + "panel", 32, 32, 14, Rgba(30, 62, 98, .72), Rgba(18, 40, 68, .78), White(.08), 1, 15));
         list.Add(TitleStrip(x + "title", 32, 32, 13, Rgba(14, 20, 28, .94), Color.Transparent));
         list.Add(Box(x + "close-hover", 16, 16, 6, White(.12), White(.12), Color.Transparent, 0, 7));
         list.Add(Icon(x + "close", 14, 14, XCrop, Hex("ffffff"), Lucide.X));

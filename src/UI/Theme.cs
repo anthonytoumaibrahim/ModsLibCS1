@@ -234,7 +234,7 @@ namespace ModsLibCS1.UI
             t.TabText = Hex(0xd8e0e8);
             t.TabHoverText = Hex(0xffffff);
             t.TabSelectedText = Hex(0xffffff);
-            t.TabIcon = Hex(0xa9b8c8);
+            t.TabIcon = Hex(0xcdd8e3);
             t.TabIconHover = Hex(0xffffff);
             t.TabIconSelected = Hex(0xffffff);   // white on the blue block (navy read as black)
             t.ButtonText = Hex(0xffffff);
