@@ -73,10 +73,11 @@ public static class SpriteMaker
         sprites.Add(Icon("fold-open", 10, 6, ChevronDownCrop, Color.White, Lucide.ChevronDown));
         sprites.Add(Icon("fold-shut", 6, 10, ChevronRightCrop, Color.White, Lucide.ChevronRight));
 
-        // Tab icons (the new skins draw a tab as its icon, its name the tooltip): "icon-" + Lucide's
+        // Tab icons (the new skins draw a tab as its icon, its name the tooltip), 24 px with a heavier
+        // stroke than Lucide's 2 units (the author: bigger and thicker): "icon-" + Lucide's
         // name, white, tinted to the tab's text colour. A mod names the ones it wants.
         foreach (KeyValuePair<string, string[]> icon in Lucide.TabIcons)
-            sprites.Add(Icon("icon-" + icon.Key, 18, Color.White, icon.Value));
+            sprites.Add(Icon("icon-" + icon.Key, 24, 24, FullGrid, Color.White, icon.Value, TabIconStroke));
 
         int width, height;
         Pack(sprites, out width, out height);
@@ -423,11 +424,15 @@ public static class SpriteMaker
     private static readonly RectangleF ChevronDownCrop = new RectangleF(5f, 8f, 14f, 8.4f);
     private static readonly RectangleF ChevronRightCrop = new RectangleF(8f, 5f, 8.4f, 14f);
     private static readonly RectangleF XCrop = new RectangleF(5f, 5f, 14f, 14f);
+    private static readonly RectangleF FullGrid = new RectangleF(0f, 0f, 24f, 24f);
+
+    /// <summary>The tab icons' stroke, in grid units (Lucide's own is 2).</summary>
+    private const float TabIconStroke = 2.5f;
 
     /// <summary>A whole Lucide icon, <paramref name="size"/> pixels square.</summary>
     private static Sprite Icon(string name, int size, Color colour, string[] paths)
     {
-        return Icon(name, size, size, new RectangleF(0f, 0f, 24f, 24f), colour, paths);
+        return Icon(name, size, size, FullGrid, colour, paths, 2f);
     }
 
     /// <summary>
@@ -436,11 +441,17 @@ public static class SpriteMaker
     /// </summary>
     private static Sprite Icon(string name, int w, int h, RectangleF crop, Color colour, string[] paths)
     {
+        return Icon(name, w, h, crop, colour, paths, 2f);
+    }
+
+    /// <summary>The same, stroked <paramref name="stroke"/> grid units wide.</summary>
+    private static Sprite Icon(string name, int w, int h, RectangleF crop, Color colour, string[] paths, float stroke)
+    {
         Graphics g;
         Sprite s = New(name, w, h, 0, 0, 0, 0, out g);
         float scale = w / crop.Width;
         using (g)
-        using (Pen pen = new Pen(colour, 2f * scale))
+        using (Pen pen = new Pen(colour, stroke * scale))
         {
             pen.StartCap = pen.EndCap = LineCap.Round;
             pen.LineJoin = LineJoin.Round;

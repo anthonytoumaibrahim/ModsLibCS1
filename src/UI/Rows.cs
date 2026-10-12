@@ -57,7 +57,7 @@ namespace ModsLibCS1.UI
         /// <summary>A folding heading's state: true while its rows show. Always true on a plain one.</summary>
         public bool Open = true;
 
-        internal float ArrowY;
+        internal float ArrowX, ArrowY;
         internal string OpenSprite, ShutSprite;
 
         /// <summary>Turns the arrow (down open, right folded). Does not call the heading's onToggle.</summary>
@@ -72,7 +72,7 @@ namespace ModsLibCS1.UI
             float y = Label != null ? Label.relativePosition.y : ArrowY;
             Arrow.spriteName = open ? OpenSprite : ShutSprite;
             Arrow.size = open ? new UnityEngine.Vector2(10f, 6f) : new UnityEngine.Vector2(6f, 10f);
-            Arrow.relativePosition = open ? new UnityEngine.Vector3(1f, y + 5f) : new UnityEngine.Vector3(3f, y + 3f);
+            Arrow.relativePosition = open ? new UnityEngine.Vector3(ArrowX + 1f, y + 5f) : new UnityEngine.Vector3(ArrowX + 3f, y + 3f);
         }
     }
 

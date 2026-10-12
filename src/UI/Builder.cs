@@ -218,7 +218,8 @@ namespace ModsLibCS1.UI
         /// the library's sheet it is a plain heading (Fold null).
         /// </summary>
         /// <param name="y">Where the name stands, as for <see cref="AddHeading(UIComponent,string,float)"/>;
-        /// the clickable strip starts 4 above it and is <see cref="Theme.HeadingHeight"/> tall.</param>
+        /// the clickable strip starts <see cref="FoldAbove"/> above it and is <see cref="FoldHeight"/>
+        /// tall, its arrow and name <see cref="FoldPadding"/> in from its left edge.</param>
         public HeadingRow AddFoldingHeading(UIComponent parent, string text, float y, bool open, Action<bool> onToggle)
         {
             UITextureAtlas ours = UI.Atlas.Ours;
@@ -230,8 +231,8 @@ namespace ModsLibCS1.UI
             // First, so it draws under the name and the arrow; they let the clicks through to it.
             UIButton fold = row.Add(parent.AddUIComponent<UIButton>());
             fold.atlas = ours;
-            fold.size = new Vector2(parent.width, Theme.HeadingHeight);
-            fold.relativePosition = new Vector3(0f, y - 4f);
+            fold.size = new Vector2(parent.width, FoldHeight);
+            fold.relativePosition = new Vector3(0f, y - FoldAbove);
             fold.canFocus = false;
             string hover = S.OwnSheet ? S.ButtonHover : "st-button-hover";
             if (ours[hover] != null)
@@ -246,12 +247,13 @@ namespace ModsLibCS1.UI
             arrow.color = Theme.Heading;
             arrow.isInteractive = false;
             row.Arrow = arrow;
+            row.ArrowX = FoldPadding;
             row.ArrowY = y;
             row.OpenSprite = S.FoldOpen;
             row.ShutSprite = S.FoldShut;
             row.SetOpen(open);
 
-            AddHeading(parent, text, y, FoldIndent, row);
+            AddHeading(parent, text, y, FoldPadding + FoldIndent, row);
             row.Label.isInteractive = false;
             if (row.Rule != null)
                 row.Rule.isInteractive = false;
@@ -268,6 +270,12 @@ namespace ModsLibCS1.UI
 
         /// <summary>How far right of the arrow's left edge a folding heading's name starts.</summary>
         private const float FoldIndent = 16f;
+
+        /// <summary>A folding heading's strip: its height, how far above the name it starts, and the
+        /// room left of its arrow (the author: "a slight padding").</summary>
+        public const float FoldHeight = 30f;
+        public const float FoldAbove = 7f;
+        public const float FoldPadding = 8f;
 
         private HeadingRow AddHeading(UIComponent parent, string text, float y, float x0, HeadingRow row)
         {
@@ -914,10 +922,10 @@ namespace ModsLibCS1.UI
         {
             PaintTab(tab, selected);
 
-            // An icon tab (AddTabStrip with icons): its icon in the colour its name would have.
+            // An icon tab (AddTabStrip with icons): the open one's icon in its own colour.
             UISprite icon = tab.objectUserData as UISprite;
             if (icon != null)
-                icon.color = selected ? Theme.TabSelectedText : Theme.TabText;
+                icon.color = selected ? Theme.TabIconSelected : Theme.TabIcon;
         }
 
         private void PaintTab(UIButton tab, bool selected)
@@ -958,14 +966,11 @@ namespace ModsLibCS1.UI
             return AddTabStrip(parent, position, width, height, names, onSelect, null);
         }
 
-        /// <summary>The width of an icon tab (the new skins, with icons).</summary>
-        public const float IconTabWidth = 48f;
-
         /// <summary>
         /// The same, each tab drawn as an icon in the skins with the library's sheet: "icon-" +
         /// <paramref name="icons"/>[i] (Lucide names; THIRD-PARTY-NOTICES.md), its name the tooltip,
-        /// the tabs <see cref="IconTabWidth"/> wide from the left. Vanilla keeps its named tabs, and so
-        /// does any skin whose sheet lacks one of the icons. A null entry or list: names.
+        /// the tabs sharing the whole width as named ones do. Vanilla keeps its named tabs, and so does
+        /// any skin whose sheet lacks one of the icons. A null entry or list: names.
         /// </summary>
         public TabStrip AddTabStrip(UIComponent parent, Vector3 position, float width, float height,
             IList<string> names, Action<int> onSelect, IList<string> icons)
@@ -1020,8 +1025,6 @@ namespace ModsLibCS1.UI
 
             int count = names.Count;
             float tabWidth = count > 0 ? (width - 2f * inset - gap * (count - 1)) / count : 0f;
-            if (useIcons)
-                tabWidth = Mathf.Min(tabWidth, IconTabWidth);
 
             for (int i = 0; i < count; i++)
             {
@@ -1077,13 +1080,16 @@ namespace ModsLibCS1.UI
             sprite.isInteractive = false;
             tab.objectUserData = sprite;
 
-            tab.eventMouseEnter += (component, e) => sprite.color = Theme.TabHoverText;
-            tab.eventMouseLeave += (component, e) =>
+            // Lit on hover, unless it is the open one (its colour stays). The tab's normal sprite says
+            // which it is: SetTabSelected swaps it.
+            tab.eventMouseEnter += (component, e) =>
             {
-                // Back to whatever SetTabSelected last gave it: the tab's normal sprite says which.
-                sprite.color = tab.normalBgSprite == S.TabSelected ? Theme.TabSelectedText : Theme.TabText;
+                if (tab.normalBgSprite != S.TabSelected)
+                    sprite.color = Theme.TabIconHover;
             };
-            sprite.color = Theme.TabText;
+            tab.eventMouseLeave += (component, e) =>
+                sprite.color = tab.normalBgSprite == S.TabSelected ? Theme.TabIconSelected : Theme.TabIcon;
+            sprite.color = Theme.TabIcon;
         }
 
         /// <summary>

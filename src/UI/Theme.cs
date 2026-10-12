@@ -76,6 +76,9 @@ namespace ModsLibCS1.UI
         // Text
         public Color32 Text, Title, Heading, Status, Warning, Value;
         public Color32 TabText, TabHoverText, TabSelectedText;
+
+        /// <summary>Icon tabs (Builder.AddTabStrip with icons): the icon's colour, hovered, and on the open tab.</summary>
+        public Color32 TabIcon, TabIconHover, TabIconSelected;
         public Color32 ButtonText, AccentText;
         public Color32 FieldText, Invalid, Selection;
         public Color32 DropText, ListText;
@@ -135,6 +138,9 @@ namespace ModsLibCS1.UI
             t.TabText = Hex(0xb4bdc9);
             t.TabHoverText = Hex(0xffffff);
             t.TabSelectedText = Hex(0xffffff);
+            t.TabIcon = Hex(0x9aa5b3);
+            t.TabIconHover = Hex(0xffffff);
+            t.TabIconSelected = Hex(0x4c9bff);   // blue over the white underline
             t.ButtonText = Hex(0xf1f3f6);
             t.AccentText = Hex(0xffffff);
             t.FieldText = Hex(0xe8ebef);
@@ -174,6 +180,9 @@ namespace ModsLibCS1.UI
             t.TabText = Hex(0x9cc4e4);
             t.TabHoverText = Hex(0xd6ebfb);
             t.TabSelectedText = Hex(0xffffff);
+            t.TabIcon = Hex(0x6f93b3);
+            t.TabIconHover = Hex(0xd6ebfb);
+            t.TabIconSelected = Hex(0xffffff);   // white on the open pill
             t.ButtonText = Hex(0xffffff);
             t.AccentText = Hex(0x08202f);
             t.FieldText = Hex(0xe3eef7);
@@ -225,6 +234,9 @@ namespace ModsLibCS1.UI
             t.TabText = Hex(0xd8e0e8);
             t.TabHoverText = Hex(0xffffff);
             t.TabSelectedText = Hex(0xffffff);
+            t.TabIcon = Hex(0xa9b8c8);
+            t.TabIconHover = Hex(0xffffff);
+            t.TabIconSelected = Hex(0xffffff);   // white on the blue block (navy read as black)
             t.ButtonText = Hex(0xffffff);
             t.AccentText = Hex(0xffffff);
             t.FieldText = Hex(0xffffff);
