@@ -49,6 +49,31 @@ namespace ModsLibCS1.UI
 
         /// <summary>The line after the heading; null in skins without one.</summary>
         public UISprite Rule;
+
+        /// <summary>A folding heading (Builder.AddFoldingHeading): the clickable strip and its arrow. Null on a plain one.</summary>
+        public UIButton Fold;
+        public UISprite Arrow;
+
+        /// <summary>A folding heading's state: true while its rows show. Always true on a plain one.</summary>
+        public bool Open = true;
+
+        internal float ArrowY;
+        internal string OpenSprite, ShutSprite;
+
+        /// <summary>Turns the arrow (down open, right folded). Does not call the heading's onToggle.</summary>
+        public void SetOpen(bool open)
+        {
+            Open = open;
+            if (Arrow == null)
+                return;
+
+            // Both centred on the same point, level with the name's capitals -- where the name stands
+            // now: the page may have moved the heading since it was built.
+            float y = Label != null ? Label.relativePosition.y : ArrowY;
+            Arrow.spriteName = open ? OpenSprite : ShutSprite;
+            Arrow.size = open ? new UnityEngine.Vector2(10f, 6f) : new UnityEngine.Vector2(6f, 10f);
+            Arrow.relativePosition = open ? new UnityEngine.Vector3(1f, y + 5f) : new UnityEngine.Vector3(3f, y + 3f);
+        }
     }
 
     public sealed class SliderRow : BuiltRow
@@ -158,6 +183,10 @@ namespace ModsLibCS1.UI
         public UISlicedSprite Tint;
 
         public UILabel Title;
+
+        /// <summary>The dimmer title after it (Builder.SetSubtitle); null until one is set.</summary>
+        public UILabel Subtitle;
+
         public UIButton Close;
         public UIDragHandle Drag;
 

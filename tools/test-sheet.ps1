@@ -1,4 +1,4 @@
-﻿# Offline checks of the sprite sheet, the skins' sprite names and the choice-row fit rule.
+# Offline checks of the sprite sheet, the skins' sprite names and the choice-row fit rule.
 # The three files are pure (no Unity), so their SOURCE is compiled here; no game needed.
 #
 #   powershell -NoProfile -ExecutionPolicy Bypass -File tools\test-sheet.ps1
@@ -45,8 +45,9 @@ foreach ($skin in 'SeeThrough', 'GameBlue', 'Frosted') {
     foreach ($n in $sprites.All()) { $used[$n] = $true }
 }
 
-$unused = @($table.Entries | Where-Object { -not $used.ContainsKey($_.Name) } | ForEach-Object { $_.Name })
-Check "every sprite in the sheet is used by a skin" ($unused.Count -eq 0) ($unused -join ', ')
+# Tab icons ("icon-" + a Lucide name) are offered to the mods, which name the ones they want.
+$unused = @($table.Entries | Where-Object { -not $used.ContainsKey($_.Name) -and -not $_.Name.StartsWith("icon-") } | ForEach-Object { $_.Name })
+Check "every sprite in the sheet is used by a skin (or is a tab icon)" ($unused.Count -eq 0) ($unused -join ', ')
 
 $v = [ModsLibCS1.UI.SkinSprites]::Vanilla()
 Check "Vanilla draws from the game's atlas" (-not $v.OwnSheet)

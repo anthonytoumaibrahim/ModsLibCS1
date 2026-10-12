@@ -31,6 +31,12 @@ namespace ModsLibCS1.UI
         /// </summary>
         public string Reset;
 
+        /// <summary>
+        /// A folding heading's arrow, open (down) and folded (right). White, tinted to the heading's
+        /// colour; like <see cref="Reset"/>, Vanilla's comes from the library's sheet too.
+        /// </summary>
+        public string FoldOpen, FoldShut;
+
         /// <summary>True for the library's own sheet, false for the game's atlas.</summary>
         public bool OwnSheet;
 
@@ -141,6 +147,8 @@ namespace ModsLibCS1.UI
             s.Hud = x + "hud";
             s.HudHover = x + "hud-hover";
             s.Reset = "reset";
+            s.FoldOpen = "fold-open";
+            s.FoldShut = "fold-shut";
             return s;
         }
 
@@ -155,6 +163,7 @@ namespace ModsLibCS1.UI
                 Drop, DropHover, DropFocus, DropDisabled, DropArrow, List, ListHover, ListHighlight,
                 Track, Fill, Thumb, SegStrip, SegHover, SegSelected, ToggleOff, ToggleOn, Value,
                 TabStrip, Tab, TabHover, TabPressed, TabSelected, Hud, HudHover, Band, RowLine, Reset,
+                FoldOpen, FoldShut,
             };
 
             List<string> all = new List<string>();

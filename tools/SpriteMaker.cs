@@ -62,9 +62,21 @@ public static class SpriteMaker
         // game's fields use its 'EmptySprite', which lives in the game's atlas, not ours).
         sprites.Add(Box("white", 4, 4, 0, Color.White, Color.White, Color.Transparent, 0, 0));
 
-        // A row's reset button, every skin: a round arrow, drawn here from an arc and a triangle
-        // (no third-party icon).
-        sprites.Add(ResetArrow("reset", 14, Color.FromArgb(235, 255, 255, 255)));
+        // Every icon is Lucide's (lucide.dev, ISC licence: THIRD-PARTY-NOTICES.md), drawn here from
+        // its own SVG paths (Lucide's 24-unit grid, 2-unit round strokes).
+        //
+        // A row's reset button, every skin: rotate-ccw.
+        sprites.Add(Icon("reset", 16, Color.FromArgb(235, 255, 255, 255), Lucide.RotateCcw));
+
+        // A folding heading's arrow, every skin: down while its rows show, right while they are
+        // folded away. White, tinted to the heading's colour by whoever draws it.
+        sprites.Add(Icon("fold-open", 10, 6, ChevronDownCrop, Color.White, Lucide.ChevronDown));
+        sprites.Add(Icon("fold-shut", 6, 10, ChevronRightCrop, Color.White, Lucide.ChevronRight));
+
+        // Tab icons (the new skins draw a tab as its icon, its name the tooltip): "icon-" + Lucide's
+        // name, white, tinted to the tab's text colour. A mod names the ones it wants.
+        foreach (KeyValuePair<string, string[]> icon in Lucide.TabIcons)
+            sprites.Add(Icon("icon-" + icon.Key, 18, Color.White, icon.Value));
 
         int width, height;
         Pack(sprites, out width, out height);
@@ -221,7 +233,7 @@ public static class SpriteMaker
         list.Add(Box(x + "panel", 32, 32, r, p.PanelTop, p.PanelBottom, p.PanelBorder, 1, r + 2));
         list.Add(TitleStrip(x + "title", 32, 32, r - 1, p.Title, p.TitleLine));
         list.Add(Box(x + "close-hover", 16, 16, 4, p.CloseHover, p.CloseHover, Color.Transparent, 0, 6));
-        list.Add(Cross(x + "close", 12, p.CloseGlyph));
+        list.Add(Icon(x + "close", 12, 12, XCrop, p.CloseGlyph, Lucide.X));
 
         // Buttons, plus the accent pair (Save while there are unsaved changes, a picked segment).
         list.Add(Box(x + "button", 16, 16, 4, p.Button, p.Button, p.ButtonBorder, 1, 6));
@@ -236,7 +248,7 @@ public static class SpriteMaker
         list.Add(Box(x + "drop", 16, 16, 4, p.Drop, p.Drop, p.DropBorder, 1, 6));
         list.Add(Box(x + "drop-hover", 16, 16, 4, p.DropHover, p.DropHover, p.DropBorder, 1, 6));
         list.Add(Box(x + "drop-focus", 16, 16, 4, p.Drop, p.Drop, p.Accent, 1, 6));
-        list.Add(Chevron(x + "arrow", 10, 6, p.DropArrow));
+        list.Add(Icon(x + "arrow", 10, 6, ChevronDownCrop, p.DropArrow, Lucide.ChevronDown));
         list.Add(Box(x + "list", 16, 16, 4, p.List, p.List, p.DropBorder, 1, 6));
         list.Add(Box(x + "list-hover", 12, 12, 3, p.ListHover, p.ListHover, Color.Transparent, 0, 4));
         list.Add(Box(x + "list-highlight", 12, 12, 3, p.ListHighlight, p.ListHighlight, Color.Transparent, 0, 4));
@@ -303,7 +315,7 @@ public static class SpriteMaker
         list.Add(Box(x + "panel", 32, 32, 14, Rgba(60, 86, 112, .58), Rgba(42, 62, 82, .62), White(.07), 1, 15));
         list.Add(TitleStrip(x + "title", 32, 32, 13, Rgba(14, 20, 28, .94), Color.Transparent));
         list.Add(Box(x + "close-hover", 16, 16, 6, White(.12), White(.12), Color.Transparent, 0, 7));
-        list.Add(Cross(x + "close", 14, Hex("ffffff"), 2.6f));
+        list.Add(Icon(x + "close", 14, 14, XCrop, Hex("ffffff"), Lucide.X));
 
         list.Add(Box(x + "button", 16, 16, 6, White(.15), White(.15), Color.Transparent, 0, 7));
         list.Add(Box(x + "button-hover", 16, 16, 6, White(.24), White(.24), Color.Transparent, 0, 7));
@@ -316,7 +328,7 @@ public static class SpriteMaker
         list.Add(Box(x + "drop", 16, 16, 6, White(.15), White(.15), White(.16), 1, 7));
         list.Add(Box(x + "drop-hover", 16, 16, 6, White(.24), White(.24), White(.16), 1, 7));
         list.Add(Box(x + "drop-focus", 16, 16, 6, White(.15), White(.15), accent, 1, 7));
-        list.Add(Chevron(x + "arrow", 10, 6, Hex("ffffff")));
+        list.Add(Icon(x + "arrow", 10, 6, ChevronDownCrop, Hex("ffffff"), Lucide.ChevronDown));
         list.Add(Box(x + "list", 16, 16, 6, Rgba(32, 46, 60, .97), Rgba(32, 46, 60, .97), White(.16), 1, 7));
         list.Add(Box(x + "list-hover", 12, 12, 4, White(.12), White(.12), Color.Transparent, 0, 5));
         list.Add(Box(x + "list-highlight", 12, 12, 4, White(.18), White(.18), Color.Transparent, 0, 5));
@@ -344,44 +356,355 @@ public static class SpriteMaker
         list.Add(Box(x + "hud-hover", 20, 20, 8, blueTop, blueBottom, Color.Transparent, 0, 9));
     }
 
+    // ------------------------------------------------------------------ Lucide icons
+
     /// <summary>
-    /// A clockwise round arrow: three quarters and a bit of a circle, open at the top left, the
-    /// arrowhead at its end pointing on round the circle.
+    /// The Lucide icons the library draws (lucide-static 0.460.0, ISC licence, copied from its SVG
+    /// files: THIRD-PARTY-NOTICES.md). Each is its elements' path data on Lucide's 24-unit grid; a
+    /// circle is written as two arcs, a polyline as M/L.
     /// </summary>
-    private static Sprite ResetArrow(string name, int size, Color colour)
+    private static class Lucide
+    {
+        public static readonly string[] RotateCcw = { "M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8", "M3 3v5h5" };
+        public static readonly string[] ChevronDown = { "m6 9 6 6 6-6" };
+        public static readonly string[] ChevronRight = { "m9 18 6-6-6-6" };
+        public static readonly string[] X = { "M18 6 6 18", "m6 6 12 12" };
+
+        /// <summary>The tab icons, by Lucide's name (the sprite is "icon-" + it).</summary>
+        public static readonly KeyValuePair<string, string[]>[] TabIcons =
+        {
+            new KeyValuePair<string, string[]>("clock", new[]
+            {
+                Circle(12, 12, 10), "M12 6L12 12L16 14",
+            }),
+            new KeyValuePair<string, string[]>("cloud", new[]
+            {
+                "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z",
+            }),
+            new KeyValuePair<string, string[]>("cloudy", new[]
+            {
+                "M17.5 21H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z",
+                "M22 10a3 3 0 0 0-3-3h-2.207a5.502 5.502 0 0 0-10.702.5",
+            }),
+            new KeyValuePair<string, string[]>("cloud-fog", new[]
+            {
+                "M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242", "M16 17H7", "M17 21H9",
+            }),
+            new KeyValuePair<string, string[]>("cloud-rain", new[]
+            {
+                "M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242", "M16 14v6", "M8 14v6", "M12 16v6",
+            }),
+            new KeyValuePair<string, string[]>("cloud-sun-rain", new[]
+            {
+                "M12 2v2", "m4.93 4.93 1.41 1.41", "M20 12h2", "m19.07 4.93-1.41 1.41",
+                "M15.947 12.65a4 4 0 0 0-5.925-4.128", "M3 20a5 5 0 1 1 8.9-4H13a3 3 0 0 1 2 5.24",
+                "M11 20v2", "M7 19v2",
+            }),
+            new KeyValuePair<string, string[]>("sun", new[]
+            {
+                Circle(12, 12, 4), "M12 2v2", "M12 20v2", "m4.93 4.93 1.41 1.41", "m17.66 17.66 1.41 1.41",
+                "M2 12h2", "M20 12h2", "m6.34 17.66-1.41 1.41", "m19.07 4.93-1.41 1.41",
+            }),
+            new KeyValuePair<string, string[]>("lightbulb", new[]
+            {
+                "M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5",
+                "M9 18h6", "M10 22h4",
+            }),
+        };
+
+        private static string Circle(float cx, float cy, float r)
+        {
+            return string.Format(CultureInfo.InvariantCulture, "M{0} {1}a{2} {2} 0 1 0 {3} 0a{2} {2} 0 1 0 {4} 0Z",
+                cx - r, cy, r, 2f * r, -2f * r);
+        }
+    }
+
+    // The part of Lucide's grid a cropped glyph shows (its strokes included).
+    private static readonly RectangleF ChevronDownCrop = new RectangleF(5f, 8f, 14f, 8.4f);
+    private static readonly RectangleF ChevronRightCrop = new RectangleF(8f, 5f, 8.4f, 14f);
+    private static readonly RectangleF XCrop = new RectangleF(5f, 5f, 14f, 14f);
+
+    /// <summary>A whole Lucide icon, <paramref name="size"/> pixels square.</summary>
+    private static Sprite Icon(string name, int size, Color colour, string[] paths)
+    {
+        return Icon(name, size, size, new RectangleF(0f, 0f, 24f, 24f), colour, paths);
+    }
+
+    /// <summary>
+    /// A Lucide icon's <paramref name="crop"/> of the grid at w x h pixels: its paths stroked 2 units
+    /// wide, round caps and joins, as Lucide draws them.
+    /// </summary>
+    private static Sprite Icon(string name, int w, int h, RectangleF crop, Color colour, string[] paths)
     {
         Graphics g;
-        Sprite s = New(name, size, size, 0, 0, 0, 0, out g);
+        Sprite s = New(name, w, h, 0, 0, 0, 0, out g);
+        float scale = w / crop.Width;
         using (g)
+        using (Pen pen = new Pen(colour, 2f * scale))
         {
-            float c = size / 2f, r = size / 2f - 2.6f;
-            const float start = 250f, sweep = 285f;   // GDI+ degrees: clockwise on screen, 0 = right
-
-            using (Pen pen = new Pen(colour, 1.9f))
+            pen.StartCap = pen.EndCap = LineCap.Round;
+            pen.LineJoin = LineJoin.Round;
+            foreach (string d in paths)
             {
-                pen.StartCap = LineCap.Round;
-                pen.EndCap = LineCap.Flat;
-                g.DrawArc(pen, c - r, c - r, 2f * r, 2f * r, start, sweep);
+                using (GraphicsPath path = SvgPath.Parse(d))
+                {
+                    using (Matrix m = new Matrix())
+                    {
+                        m.Scale(scale, scale);
+                        m.Translate(-crop.X, -crop.Y);
+                        path.Transform(m);
+                    }
+                    g.DrawPath(pen, path);
+                }
             }
-
-            // The arrowhead at the arc's end, pointing along it (clockwise).
-            double end = (start + sweep) * Math.PI / 180.0;
-            PointF tip = new PointF((float)(c + r * Math.Cos(end)), (float)(c + r * Math.Sin(end)));
-            PointF along = new PointF((float)-Math.Sin(end), (float)Math.Cos(end));   // clockwise tangent
-            PointF outward = new PointF((float)Math.Cos(end), (float)Math.Sin(end));
-            const float length = 4.2f, half = 3.1f;
-            PointF point = new PointF(tip.X + along.X * length * 0.6f, tip.Y + along.Y * length * 0.6f);
-            PointF back = new PointF(tip.X - along.X * length * 0.4f, tip.Y - along.Y * length * 0.4f);
-            PointF[] head =
-            {
-                point,
-                new PointF(back.X + outward.X * half, back.Y + outward.Y * half),
-                new PointF(back.X - outward.X * half, back.Y - outward.Y * half),
-            };
-            using (SolidBrush b = new SolidBrush(colour))
-                g.FillPolygon(b, head);
         }
         return s;
+    }
+
+    /// <summary>
+    /// SVG path data to a GraphicsPath: M L H V C S Q T A Z, absolute and relative. Arcs become
+    /// cubic Béziers (the endpoint-to-centre conversion of the SVG spec, appendix F.6).
+    /// </summary>
+    private static class SvgPath
+    {
+        public static GraphicsPath Parse(string d)
+        {
+            GraphicsPath path = new GraphicsPath();
+            List<string> tokens = Tokens(d);
+            int i = 0;
+            char command = 'M';
+            PointF current = PointF.Empty, start = PointF.Empty, control = PointF.Empty;
+            char last = ' ';
+
+            while (i < tokens.Count)
+            {
+                if (char.IsLetter(tokens[i][0]))
+                    command = tokens[i++][0];
+
+                bool rel = char.IsLower(command);
+                char c = char.ToUpperInvariant(command);
+                PointF o = rel ? current : PointF.Empty;
+
+                switch (c)
+                {
+                    case 'M':
+                    {
+                        PointF p = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        path.StartFigure();
+                        current = start = p;
+                        command = rel ? 'l' : 'L';   // pairs after a move are lines
+                        break;
+                    }
+                    case 'L':
+                    {
+                        PointF p = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        path.AddLine(current, p);
+                        current = p;
+                        break;
+                    }
+                    case 'H':
+                    {
+                        float x = Num(tokens, ref i) + (rel ? current.X : 0f);
+                        PointF p = new PointF(x, current.Y);
+                        path.AddLine(current, p);
+                        current = p;
+                        break;
+                    }
+                    case 'V':
+                    {
+                        float y = Num(tokens, ref i) + (rel ? current.Y : 0f);
+                        PointF p = new PointF(current.X, y);
+                        path.AddLine(current, p);
+                        current = p;
+                        break;
+                    }
+                    case 'C':
+                    {
+                        PointF c1 = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        PointF c2 = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        PointF p = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        path.AddBezier(current, c1, c2, p);
+                        control = c2;
+                        current = p;
+                        break;
+                    }
+                    case 'S':
+                    {
+                        PointF c1 = last == 'C' || last == 'S' ? Mirror(control, current) : current;
+                        PointF c2 = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        PointF p = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        path.AddBezier(current, c1, c2, p);
+                        control = c2;
+                        current = p;
+                        break;
+                    }
+                    case 'Q':
+                    case 'T':
+                    {
+                        PointF q = c == 'Q'
+                            ? Add(o, Num(tokens, ref i), Num(tokens, ref i))
+                            : (last == 'Q' || last == 'T' ? Mirror(control, current) : current);
+                        PointF p = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        path.AddBezier(current, Lerp(current, q, 2f / 3f), Lerp(p, q, 2f / 3f), p);
+                        control = q;
+                        current = p;
+                        break;
+                    }
+                    case 'A':
+                    {
+                        float rx = Num(tokens, ref i), ry = Num(tokens, ref i), angle = Num(tokens, ref i);
+                        bool large = Num(tokens, ref i) != 0f, sweep = Num(tokens, ref i) != 0f;
+                        PointF p = Add(o, Num(tokens, ref i), Num(tokens, ref i));
+                        Arc(path, current, p, rx, ry, angle, large, sweep);
+                        current = p;
+                        break;
+                    }
+                    case 'Z':
+                        path.CloseFigure();
+                        current = start;
+                        break;
+                    default:
+                        throw new FormatException("path command " + command + " in " + d);
+                }
+
+                last = c;
+            }
+
+            return path;
+        }
+
+        private static List<string> Tokens(string d)
+        {
+            List<string> tokens = new List<string>();
+            int i = 0;
+            while (i < d.Length)
+            {
+                char ch = d[i];
+                if (char.IsLetter(ch) && ch != 'e' && ch != 'E')
+                {
+                    tokens.Add(ch.ToString());
+                    i++;
+                }
+                else if (char.IsDigit(ch) || ch == '-' || ch == '+' || ch == '.')
+                {
+                    // One number: a sign, digits with at most one point, an exponent. "1.5.7" is two.
+                    int s = i;
+                    if (ch == '-' || ch == '+')
+                        i++;
+                    bool point = false;
+                    while (i < d.Length && (char.IsDigit(d[i]) || (d[i] == '.' && !point)))
+                    {
+                        if (d[i] == '.')
+                            point = true;
+                        i++;
+                    }
+                    if (i < d.Length && (d[i] == 'e' || d[i] == 'E'))
+                    {
+                        i++;
+                        if (i < d.Length && (d[i] == '-' || d[i] == '+'))
+                            i++;
+                        while (i < d.Length && char.IsDigit(d[i]))
+                            i++;
+                    }
+                    tokens.Add(d.Substring(s, i - s));
+                }
+                else
+                {
+                    i++;   // spaces and commas
+                }
+            }
+            return tokens;
+        }
+
+        private static float Num(List<string> tokens, ref int i)
+        {
+            if (i >= tokens.Count || char.IsLetter(tokens[i][0]))
+                throw new FormatException("a number missing in a path");
+            return float.Parse(tokens[i++], NumberStyles.Float, CultureInfo.InvariantCulture);
+        }
+
+        private static PointF Add(PointF o, float x, float y)
+        {
+            return new PointF(o.X + x, o.Y + y);
+        }
+
+        private static PointF Mirror(PointF control, PointF about)
+        {
+            return new PointF(2f * about.X - control.X, 2f * about.Y - control.Y);
+        }
+
+        private static PointF Lerp(PointF a, PointF b, float t)
+        {
+            return new PointF(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t);
+        }
+
+        private static void Arc(GraphicsPath path, PointF p0, PointF p1, float rx, float ry, float angleDeg,
+            bool large, bool sweep)
+        {
+            if (rx == 0f || ry == 0f || (p0.X == p1.X && p0.Y == p1.Y))
+            {
+                path.AddLine(p0, p1);
+                return;
+            }
+
+            double phi = angleDeg * Math.PI / 180.0, cos = Math.Cos(phi), sin = Math.Sin(phi);
+            double dx = (p0.X - p1.X) / 2.0, dy = (p0.Y - p1.Y) / 2.0;
+            double x1 = cos * dx + sin * dy, y1 = -sin * dx + cos * dy;
+            double a = Math.Abs(rx), b = Math.Abs(ry);
+            double lambda = x1 * x1 / (a * a) + y1 * y1 / (b * b);
+            if (lambda > 1.0)
+            {
+                a *= Math.Sqrt(lambda);
+                b *= Math.Sqrt(lambda);
+            }
+
+            double num = a * a * b * b - a * a * y1 * y1 - b * b * x1 * x1;
+            double den = a * a * y1 * y1 + b * b * x1 * x1;
+            double k = Math.Sqrt(Math.Max(0.0, num / den)) * (large == sweep ? -1.0 : 1.0);
+            double cx1 = k * a * y1 / b, cy1 = -k * b * x1 / a;
+            double cx = cos * cx1 - sin * cy1 + (p0.X + p1.X) / 2.0;
+            double cy = sin * cx1 + cos * cy1 + (p0.Y + p1.Y) / 2.0;
+
+            double t1 = Math.Atan2((y1 - cy1) / b, (x1 - cx1) / a);
+            double t2 = Math.Atan2((-y1 - cy1) / b, (-x1 - cx1) / a);
+            double dt = t2 - t1;
+            if (sweep && dt < 0) dt += 2 * Math.PI;
+            if (!sweep && dt > 0) dt -= 2 * Math.PI;
+
+            int segments = (int)Math.Ceiling(Math.Abs(dt) / (Math.PI / 2) - 1e-9);
+            double step = dt / segments;
+            double alpha = 4.0 / 3.0 * Math.Tan(step / 4);
+            double t = t1;
+            PointF from = p0;
+            for (int s = 0; s < segments; s++)
+            {
+                double ta = t, tb = t + step;
+                PointF c1 = Ellipse(cx, cy, a, b, cos, sin, ta, alpha, true);
+                PointF c2 = Ellipse(cx, cy, a, b, cos, sin, tb, alpha, false);
+                PointF to = s == segments - 1 ? p1 : On(cx, cy, a, b, cos, sin, tb);
+                path.AddBezier(from, c1, c2, to);
+                from = to;
+                t = tb;
+            }
+        }
+
+        private static PointF On(double cx, double cy, double a, double b, double cos, double sin, double t)
+        {
+            double x = a * Math.Cos(t), y = b * Math.Sin(t);
+            return new PointF((float)(cx + cos * x - sin * y), (float)(cy + sin * x + cos * y));
+        }
+
+        /// <summary>A Bézier control point at angle t: the point on the ellipse pushed along its tangent.</summary>
+        private static PointF Ellipse(double cx, double cy, double a, double b, double cos, double sin, double t,
+            double alpha, bool forward)
+        {
+            double x = a * Math.Cos(t), y = b * Math.Sin(t);
+            double tx = -a * Math.Sin(t), ty = b * Math.Cos(t);
+            double f = forward ? alpha : -alpha;
+            x += f * tx;
+            y += f * ty;
+            return new PointF((float)(cx + cos * x - sin * y), (float)(cy + sin * x + cos * y));
+        }
     }
 
     /// <summary>A tab: top corners rounded, square at the bottom where it meets the band.</summary>
@@ -583,39 +906,6 @@ public static class SpriteMaker
         using (g)
         using (SolidBrush b = new SolidBrush(line))
             g.FillRectangle(b, 0, 0, 4, 1);
-        return s;
-    }
-
-    private static Sprite Cross(string name, int size, Color colour)
-    {
-        return Cross(name, size, colour, 1.8f);
-    }
-
-    private static Sprite Cross(string name, int size, Color colour, float stroke)
-    {
-        Graphics g;
-        Sprite s = New(name, size, size, 0, 0, 0, 0, out g);
-        using (g)
-        using (Pen pen = new Pen(colour, stroke))
-        {
-            pen.StartCap = pen.EndCap = LineCap.Round;
-            g.DrawLine(pen, 1.5f, 1.5f, size - 1.5f, size - 1.5f);
-            g.DrawLine(pen, size - 1.5f, 1.5f, 1.5f, size - 1.5f);
-        }
-        return s;
-    }
-
-    private static Sprite Chevron(string name, int w, int h, Color colour)
-    {
-        Graphics g;
-        Sprite s = New(name, w, h, 0, 0, 0, 0, out g);
-        using (g)
-        using (Pen pen = new Pen(colour, 1.8f))
-        {
-            pen.StartCap = pen.EndCap = LineCap.Round;
-            pen.LineJoin = LineJoin.Round;
-            g.DrawLines(pen, new[] { new PointF(1f, 1f), new PointF(w / 2f, h - 1f), new PointF(w - 1f, 1f) });
-        }
         return s;
     }
 

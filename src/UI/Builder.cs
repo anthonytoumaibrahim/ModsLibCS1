@@ -208,12 +208,74 @@ namespace ModsLibCS1.UI
         /// <summary>A group heading inside a page; in the new skins small grey capitals and a line.</summary>
         public HeadingRow AddHeading(UIComponent parent, string text, float y)
         {
+            return AddHeading(parent, text, y, 0f, new HeadingRow());
+        }
+
+        /// <summary>
+        /// A heading that folds the rows under it away and back: an arrow before its name (down while
+        /// open, right while folded), the whole width clickable and softly lit on hover. It only draws:
+        /// the caller hides its rows in <paramref name="onToggle"/>, which gets the new state. Without
+        /// the library's sheet it is a plain heading (Fold null).
+        /// </summary>
+        /// <param name="y">Where the name stands, as for <see cref="AddHeading(UIComponent,string,float)"/>;
+        /// the clickable strip starts 4 above it and is <see cref="Theme.HeadingHeight"/> tall.</param>
+        public HeadingRow AddFoldingHeading(UIComponent parent, string text, float y, bool open, Action<bool> onToggle)
+        {
+            UITextureAtlas ours = UI.Atlas.Ours;
+            if (ours == null || S.FoldOpen == null || ours[S.FoldOpen] == null || ours[S.FoldShut] == null)
+                return AddHeading(parent, text, y);
+
             HeadingRow row = new HeadingRow();
+
+            // First, so it draws under the name and the arrow; they let the clicks through to it.
+            UIButton fold = row.Add(parent.AddUIComponent<UIButton>());
+            fold.atlas = ours;
+            fold.size = new Vector2(parent.width, Theme.HeadingHeight);
+            fold.relativePosition = new Vector3(0f, y - 4f);
+            fold.canFocus = false;
+            string hover = S.OwnSheet ? S.ButtonHover : "st-button-hover";
+            if (ours[hover] != null)
+            {
+                fold.hoveredBgSprite = hover;
+                fold.pressedBgSprite = hover;
+            }
+            row.Fold = fold;
+
+            UISprite arrow = row.Add(parent.AddUIComponent<UISprite>());
+            arrow.atlas = ours;
+            arrow.color = Theme.Heading;
+            arrow.isInteractive = false;
+            row.Arrow = arrow;
+            row.ArrowY = y;
+            row.OpenSprite = S.FoldOpen;
+            row.ShutSprite = S.FoldShut;
+            row.SetOpen(open);
+
+            AddHeading(parent, text, y, FoldIndent, row);
+            row.Label.isInteractive = false;
+            if (row.Rule != null)
+                row.Rule.isInteractive = false;
+
+            fold.eventClick += (component, e) =>
+            {
+                row.SetOpen(!row.Open);
+                if (onToggle != null)
+                    onToggle(row.Open);
+            };
+
+            return row;
+        }
+
+        /// <summary>How far right of the arrow's left edge a folding heading's name starts.</summary>
+        private const float FoldIndent = 16f;
+
+        private HeadingRow AddHeading(UIComponent parent, string text, float y, float x0, HeadingRow row)
+        {
             string shown = Theme.HeadingCaps && text != null ? text.ToUpperInvariant() : text;
 
-            UILabel heading = row.Add(AddLabel(parent, shown, new Vector3(0f, y), Theme.HeadingScale));
+            UILabel heading = row.Add(AddLabel(parent, shown, new Vector3(x0, y), Theme.HeadingScale));
             heading.autoSize = false;
-            heading.size = new Vector2(parent.width, 20f);
+            heading.size = new Vector2(parent.width - x0, 20f);
             if (Theme.HeadingCaps)
                 heading.characterSpacing = 1;
             Paint(heading, Theme.Heading);
@@ -232,7 +294,7 @@ namespace ModsLibCS1.UI
             {
                 // Measured with the spacing the caps get: one unit per character.
                 float textWidth = Measure(shown, Theme.HeadingScale) + (Theme.HeadingCaps ? shown.Length : 0);
-                float x = Mathf.Ceil(textWidth) + 10f;
+                float x = x0 + Mathf.Ceil(textWidth) + 10f;
                 if (x < parent.width - 10f)
                 {
                     UISprite rule = row.Add(parent.AddUIComponent<UISprite>());
@@ -850,6 +912,16 @@ namespace ModsLibCS1.UI
         /// </summary>
         public void SetTabSelected(UIButton tab, bool selected)
         {
+            PaintTab(tab, selected);
+
+            // An icon tab (AddTabStrip with icons): its icon in the colour its name would have.
+            UISprite icon = tab.objectUserData as UISprite;
+            if (icon != null)
+                icon.color = selected ? Theme.TabSelectedText : Theme.TabText;
+        }
+
+        private void PaintTab(UIButton tab, bool selected)
+        {
             switch (Theme.Tabs)
             {
                 case TabShape.GameTabs:
@@ -883,7 +955,23 @@ namespace ModsLibCS1.UI
         public TabStrip AddTabStrip(UIComponent parent, Vector3 position, float width, float height,
             IList<string> names, Action<int> onSelect)
         {
+            return AddTabStrip(parent, position, width, height, names, onSelect, null);
+        }
+
+        /// <summary>The width of an icon tab (the new skins, with icons).</summary>
+        public const float IconTabWidth = 48f;
+
+        /// <summary>
+        /// The same, each tab drawn as an icon in the skins with the library's sheet: "icon-" +
+        /// <paramref name="icons"/>[i] (Lucide names; THIRD-PARTY-NOTICES.md), its name the tooltip,
+        /// the tabs <see cref="IconTabWidth"/> wide from the left. Vanilla keeps its named tabs, and so
+        /// does any skin whose sheet lacks one of the icons. A null entry or list: names.
+        /// </summary>
+        public TabStrip AddTabStrip(UIComponent parent, Vector3 position, float width, float height,
+            IList<string> names, Action<int> onSelect, IList<string> icons)
+        {
             TabStrip strip = new TabStrip { Paint = SetTabSelected };
+            bool useIcons = HasIcons(icons, names.Count);
             float inset = 0f, gap = 0f;
 
             if (Theme.Tabs == TabShape.Pills && S.TabStrip != null)
@@ -932,10 +1020,16 @@ namespace ModsLibCS1.UI
 
             int count = names.Count;
             float tabWidth = count > 0 ? (width - 2f * inset - gap * (count - 1)) / count : 0f;
+            if (useIcons)
+                tabWidth = Mathf.Min(tabWidth, IconTabWidth);
+
             for (int i = 0; i < count; i++)
             {
-                UIButton tab = AddTab(parent, names[i], new Vector2(tabWidth, height - 2f * inset),
+                UIButton tab = AddTab(parent, useIcons ? string.Empty : names[i], new Vector2(tabWidth, height - 2f * inset),
                     position + new Vector3(inset + i * (tabWidth + gap), inset));
+                if (useIcons)
+                    AddTabIcon(tab, icons[i], names[i]);
+
                 int captured = i;
                 tab.eventClick += (component, e) =>
                 {
@@ -946,7 +1040,94 @@ namespace ModsLibCS1.UI
                 strip.Tabs.Add(tab);
             }
 
+            if (icons != null)
+                LibLog.Msg("tabs: " + (useIcons ? "drawn as icons" : "drawn with their names") + " (" + Skin + ")");
+
             return strip;
+        }
+
+        private bool HasIcons(IList<string> icons, int count)
+        {
+            if (icons == null || icons.Count < count || Vanilla || !S.OwnSheet || Atlas == null)
+                return false;
+
+            for (int i = 0; i < count; i++)
+            {
+                if (icons[i] == null || Atlas["icon-" + icons[i]] == null)
+                    return false;
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// The icon in the middle of a tab, lit on hover like a name would be. SetTabSelected finds it
+        /// through objectUserData.
+        /// </summary>
+        private void AddTabIcon(UIButton tab, string icon, string name)
+        {
+            tab.tooltip = name;
+
+            UISprite sprite = tab.AddUIComponent<UISprite>();
+            sprite.atlas = Atlas;
+            sprite.spriteName = "icon-" + icon;
+            Vector2 size = SpriteSize(sprite.spriteName, new Vector2(18f, 18f));
+            sprite.size = size;
+            sprite.relativePosition = new Vector3(Mathf.Round((tab.width - size.x) * 0.5f), Mathf.Round((tab.height - size.y) * 0.5f));
+            sprite.isInteractive = false;
+            tab.objectUserData = sprite;
+
+            tab.eventMouseEnter += (component, e) => sprite.color = Theme.TabHoverText;
+            tab.eventMouseLeave += (component, e) =>
+            {
+                // Back to whatever SetTabSelected last gave it: the tab's normal sprite says which.
+                sprite.color = tab.normalBgSprite == S.TabSelected ? Theme.TabSelectedText : Theme.TabText;
+            };
+            sprite.color = Theme.TabText;
+        }
+
+        /// <summary>
+        /// A second, dimmer title after the panel's own -- the open tab's name when the tabs are icons
+        /// (the new skins only: Vanilla stays as it was). Null or empty hides it.
+        /// </summary>
+        public void SetSubtitle(Frame frame, string text)
+        {
+            if (Vanilla || frame == null)
+                return;
+
+            if (frame.Subtitle == null)
+            {
+                UILabel sub = frame.Panel.AddUIComponent<UILabel>();
+                sub.textScale = Theme.TitleScale;
+                sub.autoSize = false;
+                sub.isInteractive = false;
+                sub.verticalAlignment = UIVerticalAlignment.Middle;
+                Spaced(sub);
+                Paint(sub, Theme.TabText);
+                frame.Subtitle = sub;
+            }
+
+            frame.Subtitle.text = string.IsNullOrEmpty(text) ? string.Empty : "·  " + Caps(text);
+            frame.Layout(frame.Panel.width);
+        }
+
+        /// <summary>The title and the subtitle side by side, where the title alone would stand.</summary>
+        private void PlaceSubtitle(Frame frame, float width)
+        {
+            UILabel title = frame.Title, sub = frame.Subtitle;
+            if (sub == null)
+                return;
+
+            float bar = Theme.TitleHeight;
+            float titleWidth = Mathf.Ceil(Measure(title.text, Theme.TitleScale) + title.characterSpacing * title.text.Length) + 12f;
+            float subWidth = Mathf.Ceil(Measure(sub.text, Theme.TitleScale) + sub.characterSpacing * sub.text.Length) + 4f;
+            float x = Theme.TitleCentered ? Mathf.Round((width - titleWidth - subWidth) * 0.5f) : title.relativePosition.x;
+
+            title.textAlignment = UIHorizontalAlignment.Left;
+            title.size = new Vector2(titleWidth, bar);
+            title.relativePosition = new Vector3(x, title.relativePosition.y);
+            sub.size = new Vector2(subWidth, bar);
+            sub.relativePosition = new Vector3(x + titleWidth, title.relativePosition.y);
         }
 
         // ------------------------------------------------------------------ the panel itself
@@ -1068,6 +1249,8 @@ namespace ModsLibCS1.UI
                 close.relativePosition = new Vector3(width - 36f, 4f);
                 drag.size = new Vector2(width - 40f, bar);
                 drag.relativePosition = Vector3.zero;
+
+                PlaceSubtitle(frame, width);
             };
             frame.Layout(panel.width);
 
