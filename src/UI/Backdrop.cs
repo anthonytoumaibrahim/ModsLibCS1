@@ -251,7 +251,7 @@ namespace ModsLibCS1.UI
                     Destroy(_result);
                 }
 
-                _result = new RenderTexture(resultW, resultH, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Default)
+                _result = new RenderTexture(resultW, resultH, 0, ResultFormat(), RenderTextureReadWrite.Default)
                 {
                     name = "ModsLibCS1 frosted",
                     filterMode = FilterMode.Bilinear,
@@ -277,6 +277,12 @@ namespace ModsLibCS1.UI
             if (current == null)
                 return;
 
+            if (!_diagnosed)
+            {
+                _diagnosed = true;
+                Diagnose(GetComponent<Camera>(), source, current);
+            }
+
             // Up: double it back, all but the last step in temporaries, the last into the result.
             for (int i = 0; i < ups - 1; i++)
             {
@@ -290,6 +296,85 @@ namespace ModsLibCS1.UI
 
             Graphics.Blit(current, _result);
             RenderTexture.ReleaseTemporary(current);
+        }
+
+        /// <summary>
+        /// A format with NO alpha, so the panel draws the blur solid: the UI's shader multiplies by the
+        /// texture's alpha, and the frame's alpha is whatever the camera's effects left there (another
+        /// mod keeping a mask in it made the whole backdrop see-through -- the blur "gone" in one city
+        /// and not another). R11G11B10 float where the graphics card has it, else 16-bit colour.
+        /// </summary>
+        private static RenderTextureFormat ResultFormat()
+        {
+            if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB111110Float))
+                return RenderTextureFormat.RGB111110Float;
+            if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.RGB565))
+                return RenderTextureFormat.RGB565;
+            return RenderTextureFormat.ARGB32;
+        }
+
+        private static bool _diagnosed;
+
+        /// <summary>
+        /// Once per session, at the first frame blurred: what the frame's alpha holds, and every camera
+        /// and image effect that could stand between the frame and the panel -- enough for a log to say
+        /// which other mod changes the picture. Never throws.
+        /// </summary>
+        private static void Diagnose(Camera camera, RenderTexture source, RenderTexture small)
+        {
+            try
+            {
+                RenderTexture before = RenderTexture.active;
+                Texture2D read = new Texture2D(small.width, small.height, TextureFormat.RGBA32, false);
+                RenderTexture.active = small;
+                read.ReadPixels(new Rect(0, 0, small.width, small.height), 0, 0, false);
+                RenderTexture.active = before;
+                Color32[] pixels = read.GetPixels32();
+                Destroy(read);
+
+                int min = 255, max = 0;
+                long sum = 0;
+                foreach (Color32 p in pixels)
+                {
+                    min = Mathf.Min(min, p.a);
+                    max = Mathf.Max(max, p.a);
+                    sum += p.a;
+                }
+
+                LibLog.Msg("frosted: first frame " + source.width + "x" + source.height + " " + source.format +
+                           ", its alpha " + min + ".." + max + " (mean " + (pixels.Length > 0 ? sum / pixels.Length : 0) +
+                           " of 255; not used since the blur has none), blur kept as " + ResultFormat());
+
+                List<string> effects = new List<string>();
+                if (camera != null)
+                {
+                    foreach (MonoBehaviour b in camera.GetComponents<MonoBehaviour>())
+                    {
+                        if (b != null)
+                            effects.Add(b.GetType().Name + (b.enabled ? "" : " (off)"));
+                    }
+                }
+
+                LibLog.Msg("frosted: '" + (camera != null ? camera.name : "?") + "' effects in order: " +
+                           string.Join(", ", effects.ToArray()));
+
+                List<string> cameras = new List<string>();
+                foreach (Camera c in Camera.allCameras)
+                {
+                    if (c == null)
+                        continue;
+
+                    cameras.Add("'" + c.name + "' depth " + c.depth + " clear " + c.clearFlags +
+                                (c.targetTexture != null ? " into " + c.targetTexture.name + " " + c.targetTexture.width + "x" + c.targetTexture.height : " to the screen") +
+                                (c.GetComponent<UIView>() != null ? " (the UI)" : ""));
+                }
+
+                LibLog.Msg("frosted: cameras drawing now: " + string.Join("; ", cameras.ToArray()));
+            }
+            catch (System.Exception e)
+            {
+                LibLog.Msg("frosted: could not describe the frame: " + e.Message);
+            }
         }
 
         private static RenderTexture Temporary(int w, int h)
