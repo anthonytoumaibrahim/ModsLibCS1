@@ -1,0 +1,24 @@
+<Project>
+
+  <!-- Imported by each mod's csproj; the library is compiled INTO the mod's DLL (no extra DLL to
+       ship, nothing to subscribe to, no mod ever runs another mod's copy). See README.md. -->
+
+  <PropertyGroup>
+    <ModsLibCS1Dir>$(MSBuildThisFileDirectory)</ModsLibCS1Dir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Link: shown under ModsLibCS1\ in the IDE instead of as files outside the project. -->
+    <Compile Include="$(ModsLibCS1Dir)src\**\*.cs"
+             Link="ModsLibCS1\%(RecursiveDir)%(Filename)%(Extension)" />
+    <!-- FIXED LogicalNames: the library finds its sprite sheet by these names in whichever mod
+         assembly it is compiled into, whatever that mod's root namespace. -->
+    <EmbeddedResource Include="$(ModsLibCS1Dir)sprites\sheet.png"
+                      LogicalName="ModsLibCS1.sheet.png"
+                      Condition="Exists('$(ModsLibCS1Dir)sprites\sheet.png')" />
+    <EmbeddedResource Include="$(ModsLibCS1Dir)sprites\sheet.txt"
+                      LogicalName="ModsLibCS1.sheet.txt"
+                      Condition="Exists('$(ModsLibCS1Dir)sprites\sheet.txt')" />
+  </ItemGroup>
+
+</Project>
