@@ -969,9 +969,13 @@ namespace ModsLibCS1.UI
         /// <summary>
         /// The same, each tab drawn as an icon in the skins with the library's sheet: "icon-" +
         /// <paramref name="icons"/>[i] (Lucide names; THIRD-PARTY-NOTICES.md), its name the tooltip,
-        /// the tabs sharing the whole width as named ones do. Vanilla keeps its named tabs, and so does
-        /// any skin whose sheet lacks one of the icons. A null entry or list: names.
+        /// the tabs <see cref="IconTabWidth"/> wide and centred in <paramref name="width"/>. Vanilla keeps
+        /// its named tabs, and so does any skin whose sheet lacks one of the icons. A null entry or
+        /// list: names.
         /// </summary>
+        /// <summary>The width of an icon tab.</summary>
+        public const float IconTabWidth = 64f;
+
         public TabStrip AddTabStrip(UIComponent parent, Vector3 position, float width, float height,
             IList<string> names, Action<int> onSelect, IList<string> icons)
         {
@@ -1026,10 +1030,25 @@ namespace ModsLibCS1.UI
             int count = names.Count;
             float tabWidth = count > 0 ? (width - 2f * inset - gap * (count - 1)) / count : 0f;
 
+            // Icon tabs: each IconTabWidth wide, the row centred (the author: "centered" rather than
+            // the whole width); Game blue's strip shrinks round them.
+            float left = 0f;
+            if (useIcons && count > 0)
+            {
+                tabWidth = Mathf.Min(tabWidth, IconTabWidth);
+                float group = count * tabWidth + gap * (count - 1) + 2f * inset;
+                left = Mathf.Round((width - group) * 0.5f);
+                if (Theme.Tabs == TabShape.Pills && strip.Background != null)
+                {
+                    strip.Background.width = group;
+                    strip.Background.relativePosition = position + new Vector3(left, 0f);
+                }
+            }
+
             for (int i = 0; i < count; i++)
             {
                 UIButton tab = AddTab(parent, useIcons ? string.Empty : names[i], new Vector2(tabWidth, height - 2f * inset),
-                    position + new Vector3(inset + i * (tabWidth + gap), inset));
+                    position + new Vector3(left + inset + i * (tabWidth + gap), inset));
                 if (useIcons)
                     AddTabIcon(tab, icons[i], names[i]);
 
