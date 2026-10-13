@@ -45,5 +45,28 @@ namespace ModsLibCS1.UI
         {
             return textWidths.Length > 0 && StripWidth(SegmentWidths(textWidths)) <= available;
         }
+
+        /// <summary>Kept clear between a row's name and buttons that reach into the names' column.</summary>
+        public const float NameRoom = 12f;
+
+        /// <summary>
+        /// Where a row of buttons starts: at the names' <paramref name="column"/> when they fit
+        /// between it and <paramref name="right"/>; else ending at <paramref name="right"/> (where
+        /// every row's controls end) and reaching left into the column, as far as the row's own
+        /// name, <paramref name="nameWidth"/> wide, leaves room (a short name on a page of long ones:
+        /// "Cloud style" beside "Classic layer under Mixed"); -1 when neither fits (a dropdown).
+        /// </summary>
+        public static float Start(float[] textWidths, float column, float right, float nameWidth)
+        {
+            if (textWidths.Length == 0)
+                return -1f;
+
+            float strip = StripWidth(SegmentWidths(textWidths));
+            if (column + strip <= right)
+                return column;
+
+            float start = right - strip;
+            return start >= nameWidth + NameRoom ? start : -1f;
+        }
     }
 }

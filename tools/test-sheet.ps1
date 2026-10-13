@@ -99,5 +99,15 @@ Check "fits exactly at the strip's width" ($F::Fits([float[]]@(10, 60, 100.2), [
 Check "doesn't fit one unit narrower" (-not $F::Fits([float[]]@(10, 60, 100.2), [float]($strip - 1)))
 Check "no choices never fit (no empty strip)" (-not $F::Fits([float[]]@(), [float]1000))
 
+# Where the buttons start: at the column, reaching into it for a short name, or a dropdown (-1).
+# Cloud style in the 600-wide panel (2026-10-13): 62+70+46 -> a 270 strip, 241 beside a 303 column.
+$cloud = [float[]]@(62, 70, 46)
+$cloudStrip = $F::StripWidth($F::SegmentWidths($cloud))
+Check "fits beside the column: starts at it" ($F::Start($cloud, [float]200, [float]544, [float]110) -eq 200)
+Check "too wide beside it: ends at the right, reaching into the column" ($F::Start($cloud, [float]303, [float]544, [float]110) -eq (544 - $cloudStrip)) "$($F::Start($cloud, [float]303, [float]544, [float]110))"
+Check "a name too long to leave room: a dropdown" ($F::Start($cloud, [float]303, [float]544, [float](544 - $cloudStrip - $F::NameRoom + 1)) -eq -1)
+Check "exactly the name's room: buttons" ($F::Start($cloud, [float]303, [float]544, [float](544 - $cloudStrip - $F::NameRoom)) -ge 0)
+Check "no choices: a dropdown" ($F::Start([float[]]@(), [float]0, [float]1000, [float]0) -eq -1)
+
 Write-Host ""
 if ($failed -gt 0) { Write-Host "$failed FAILED"; exit 1 } else { Write-Host "all passed" }

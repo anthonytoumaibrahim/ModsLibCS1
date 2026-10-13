@@ -35,6 +35,7 @@ namespace ModsLibCS1.UI
             Theme = theme;
             Atlas = atlas;
             LabelWidth = theme.LabelWidth;
+            ValueWidth = theme.ValueWidth;
         }
 
         /// <summary>
@@ -43,6 +44,13 @@ namespace ModsLibCS1.UI
         /// change lines up on the new width.
         /// </summary>
         public float LabelWidth { get; set; }
+
+        /// <summary>
+        /// The column a slider's readout stands in, at the right end of its row (the theme's to begin
+        /// with). A panel may narrow it for a page whose readouts are short (<see cref="ReadoutWidth"/>):
+        /// the slider gets the room.
+        /// </summary>
+        public float ValueWidth { get; set; }
 
         /// <summary>
         /// Room kept free at the right end of every row for a reset button (<see cref="AddReset"/>);
@@ -328,7 +336,7 @@ namespace ModsLibCS1.UI
             // the slider.
             SliderRow row = new SliderRow { Format = format, ShowValue = ShowValue };
             float labelWidth = LabelWidth;
-            float valueWidth = Theme.ValueWidth;
+            float valueWidth = ValueWidth;
             float sliderWidth = Right(parent) - labelWidth - valueWidth - 3f * Theme.Gap;
 
             row.Name = row.Add(RowName(parent, label, y, labelWidth));
@@ -344,7 +352,7 @@ namespace ModsLibCS1.UI
             row.Slider = slider;
 
             UILabel readout = row.Add(AddLabel(parent, format(value),
-                new Vector3(Right(parent) - valueWidth, y + 8f), Theme.BoxedValues ? 0.75f : Theme.TextScale));
+                new Vector3(Right(parent) - valueWidth, y + 8f), ReadoutScale));
             readout.autoSize = false;
             readout.size = new Vector2(valueWidth, 20f);
             readout.textAlignment = UIHorizontalAlignment.Right;
@@ -385,9 +393,31 @@ namespace ModsLibCS1.UI
                 return;
 
             float right = readout.relativePosition.x + readout.width;
-            float width = Mathf.Min(Theme.ValueWidth, Mathf.Max(58f, Mathf.Ceil(Measure(text, readout.textScale)) + 14f));
+            float width = Mathf.Min(ValueWidth, BoxedWidth(Measure(text, readout.textScale)));
             readout.width = width;
             readout.relativePosition = new Vector3(right - width, readout.relativePosition.y);
+        }
+
+        /// <summary>A slider readout's text size: smaller in a box.</summary>
+        private float ReadoutScale
+        {
+            get { return Theme.BoxedValues ? 0.75f : Theme.TextScale; }
+        }
+
+        /// <summary>A boxed readout's width round text this wide: at least 58.</summary>
+        private static float BoxedWidth(float text)
+        {
+            return Mathf.Max(58f, Mathf.Ceil(text) + 14f);
+        }
+
+        /// <summary>
+        /// How wide a slider's readout of <paramref name="text"/> is drawn in this skin (its box
+        /// included where the skin boxes values): what a panel measures to choose its <see cref="ValueWidth"/>.
+        /// </summary>
+        public float ReadoutWidth(string text)
+        {
+            float wide = Measure(text, ReadoutScale);
+            return Theme.BoxedValues && S.Value != null ? BoxedWidth(wide) : Mathf.Ceil(wide);
         }
 
         /// <summary>The track, the fill (new skins) and the knob of a slider 18 high.</summary>
@@ -548,9 +578,10 @@ namespace ModsLibCS1.UI
 
         /// <summary>
         /// A choice row. Vanilla: a slider over the choices with the choice's name as its value.
-        /// New skins: a row of buttons, or a dropdown when the names don't fit beside the row's
-        /// name (measured, so it follows the language). Whatever the shape, onChanged gets the
-        /// INDEX of the picked choice; what that stores is the caller's.
+        /// New skins: a row of buttons -- beside the names' column, or reaching left into it as far
+        /// as the row's own name leaves room (<see cref="ChoiceFit.Start"/>) -- or a dropdown when
+        /// the names don't fit even so (measured, so it follows the language). Whatever the shape,
+        /// onChanged gets the INDEX of the picked choice; what that stores is the caller's.
         /// </summary>
         public ChoiceRow AddChoice(UIComponent parent, float y, string label, string[] choices, int index,
             Action<int> onChanged)
@@ -584,20 +615,27 @@ namespace ModsLibCS1.UI
             row.Name = row.Add(RowName(parent, label, y, LabelWidth));
             AddRowLine(parent, y, row);
 
-            float x = LabelWidth + Theme.Gap;
-            float available = Right(parent) - x;
+            float column = LabelWidth + Theme.Gap;
+            float right = Right(parent);
             const float scale = 0.75f;
 
             float[] textWidths = new float[count];
             for (int i = 0; i < count; i++)
                 textWidths[i] = Measure(Caps(choices[i]), scale) + (Theme.Caps ? choices[i].Length : 0);
 
-            bool fits = ChoiceFit.Fits(textWidths, available);
-            LibLog.Msg("choice '" + label + "': " + Widths(textWidths) + " of " + available.ToString("F0") +
-                       " -> " + (fits ? "buttons" : "dropdown"));
+            // Beside the names' column, or reaching into it when the row's own name is short enough
+            // (a page's column is as wide as its LONGEST name), or a dropdown.
+            float x = ChoiceFit.Start(textWidths, column, right, NameWidth(label));
+            bool fits = x >= 0f;
+            LibLog.Msg("choice '" + label + "': " + Widths(textWidths) + " of " + (right - column).ToString("F0") +
+                       " -> " + (!fits ? "dropdown" : x < column
+                           ? "buttons, reaching " + (column - x).ToString("F0") + " into the names' column"
+                           : "buttons"));
 
             if (!fits)
             {
+                x = column;
+                float available = right - column;
                 string missing;
                 UIDropDown drop = AddDropDown(parent, new Vector2(Mathf.Min(available, 260f), 26f),
                     new Vector3(x, y + 4f), count, out missing);
@@ -620,12 +658,16 @@ namespace ModsLibCS1.UI
                 LibLog.Msg("choice '" + label + "': no dropdown (sprite '" + missing + "' missing), buttons anyway");
             }
 
+            // Buttons reaching into the column: the name's label (the column's width) gives way.
+            if (x < column)
+                row.Name.width = x - Theme.Gap;
+
             float[] widths = ChoiceFit.SegmentWidths(textWidths);
 
             UIPanel strip = row.Add(parent.AddUIComponent<UIPanel>());
             strip.atlas = Atlas;
             strip.backgroundSprite = S.SegStrip;
-            strip.size = new Vector2(Mathf.Min(available, ChoiceFit.StripWidth(widths)), 26f);
+            strip.size = new Vector2(Mathf.Min(right - x, ChoiceFit.StripWidth(widths)), 26f);
             strip.relativePosition = new Vector3(x, y + 4f);
             row.Strip = strip;
 
