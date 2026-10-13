@@ -698,6 +698,78 @@ namespace ModsLibCS1.UI
             return text;
         }
 
+        // ------------------------------------------------------------------ scrolling
+
+        /// <summary>
+        /// A fixed-height window onto pages taller than it (<see cref="ScrollView"/>): a clipping
+        /// panel at <paramref name="position"/>, <paramref name="size"/> big, and beside it a thin
+        /// bar (<see cref="ScrollBarWidth"/>) whose left edge is at <paramref name="barX"/> in the
+        /// parent -- in the parent's margin, so the pages keep their width. The bar shows only while
+        /// the page shown is taller than the window. Its sprite comes from the library's sheet in
+        /// every skin (as the reset icon's); without the sheet there is no bar and the wheel still
+        /// scrolls.
+        /// </summary>
+        public ScrollView AddScrollView(UIComponent parent, Vector3 position, Vector2 size, float barX)
+        {
+            ScrollView view = new ScrollView();
+            view.WheelStep = 2f * Theme.RowHeight;
+
+            UIPanel viewport = parent.AddUIComponent<UIPanel>();
+            viewport.size = size;
+            viewport.relativePosition = position;
+            viewport.clipChildren = true;
+            view.Viewport = viewport;
+
+            UITextureAtlas ours = UI.Atlas.Ours;
+            if (ours != null && ours[ScrollSprite] != null)
+            {
+                UIScrollbar bar = parent.AddUIComponent<UIScrollbar>();
+                bar.orientation = UIOrientation.Vertical;
+                bar.size = new Vector2(ScrollBarWidth, size.y);
+                bar.relativePosition = new Vector3(barX, position.y);
+                bar.thumbPadding = new RectOffset(0, 0, 0, 0);
+                bar.minValue = 0f;
+                bar.maxValue = size.y;
+                bar.scrollSize = size.y;
+                bar.stepSize = 1f;
+                bar.incrementAmount = view.WheelStep;
+
+                // The track, the thumb inside it: the game's recipe (thumb a child of the track at
+                // the bar's origin), both the same white pill tinted.
+                UISlicedSprite track = bar.AddUIComponent<UISlicedSprite>();
+                track.atlas = ours;
+                track.spriteName = ScrollSprite;
+                track.color = Theme.ScrollTrack;
+                track.size = bar.size;
+                track.relativePosition = Vector3.zero;
+                bar.trackObject = track;
+
+                UISlicedSprite thumb = track.AddUIComponent<UISlicedSprite>();
+                thumb.atlas = ours;
+                thumb.spriteName = ScrollSprite;
+                thumb.color = Theme.ScrollThumb;
+                thumb.minimumSize = new Vector2(ScrollBarWidth, 24f);
+                thumb.size = bar.size;
+                thumb.relativePosition = Vector3.zero;
+                bar.thumbObject = thumb;
+
+                Color32 normal = Theme.ScrollThumb, lit = Theme.ScrollThumbHover;
+                bar.eventMouseEnter += (component, e) => thumb.color = lit;
+                bar.eventMouseLeave += (component, e) => thumb.color = normal;
+
+                bar.isVisible = false;   // until a page taller than the window is shown
+                view.Bar = bar;
+            }
+
+            view.Wire();
+            return view;
+        }
+
+        /// <summary>The library's scroll-bar pill, shared by every skin.</summary>
+        public const string ScrollSprite = "scroll";
+
+        public const float ScrollBarWidth = 6f;
+
         // ------------------------------------------------------------------ buttons and fields
 
         public UIButton AddButton(UIComponent parent, string text, Vector2 size, Vector3 position)

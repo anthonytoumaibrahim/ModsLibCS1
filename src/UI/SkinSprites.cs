@@ -37,6 +37,12 @@ namespace ModsLibCS1.UI
         /// </summary>
         public string FoldOpen, FoldShut;
 
+        /// <summary>
+        /// A scroll area's bar (Builder.AddScrollView): white, its track and thumb tinted by the
+        /// skin. Like <see cref="Reset"/>, taken from the library's sheet in every skin.
+        /// </summary>
+        public string Scroll;
+
         /// <summary>True for the library's own sheet, false for the game's atlas.</summary>
         public bool OwnSheet;
 
@@ -149,6 +155,7 @@ namespace ModsLibCS1.UI
             s.Reset = "reset";
             s.FoldOpen = "fold-open";
             s.FoldShut = "fold-shut";
+            s.Scroll = "scroll";
             return s;
         }
 
@@ -163,7 +170,7 @@ namespace ModsLibCS1.UI
                 Drop, DropHover, DropFocus, DropDisabled, DropArrow, List, ListHover, ListHighlight,
                 Track, Fill, Thumb, SegStrip, SegHover, SegSelected, ToggleOff, ToggleOn, Value,
                 TabStrip, Tab, TabHover, TabPressed, TabSelected, Hud, HudHover, Band, RowLine, Reset,
-                FoldOpen, FoldShut,
+                FoldOpen, FoldShut, Scroll,
             };
 
             List<string> all = new List<string>();

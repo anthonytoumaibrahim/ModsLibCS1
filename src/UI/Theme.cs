@@ -79,6 +79,9 @@ namespace ModsLibCS1.UI
 
         /// <summary>Icon tabs (Builder.AddTabStrip with icons): the icon's colour, hovered, and on the open tab.</summary>
         public Color32 TabIcon, TabIconHover, TabIconSelected;
+
+        /// <summary>A scroll area's bar (Builder.AddScrollView): its track, its thumb, and the thumb under the mouse.</summary>
+        public Color32 ScrollTrack, ScrollThumb, ScrollThumbHover;
         public Color32 ButtonText, AccentText;
         public Color32 FieldText, Invalid, Selection;
         public Color32 DropText, ListText;
@@ -141,6 +144,9 @@ namespace ModsLibCS1.UI
             t.TabIcon = Hex(0x9aa5b3);
             t.TabIconHover = Hex(0xffffff);
             t.TabIconSelected = Hex(0x4c9bff);   // blue over the white underline
+            t.ScrollTrack = new Color32(255, 255, 255, 20);
+            t.ScrollThumb = new Color32(255, 255, 255, 80);
+            t.ScrollThumbHover = new Color32(255, 255, 255, 160);
             t.ButtonText = Hex(0xf1f3f6);
             t.AccentText = Hex(0xffffff);
             t.FieldText = Hex(0xe8ebef);
@@ -183,6 +189,9 @@ namespace ModsLibCS1.UI
             t.TabIcon = Hex(0x6f93b3);
             t.TabIconHover = Hex(0xd6ebfb);
             t.TabIconSelected = Hex(0xffffff);   // white on the open pill
+            t.ScrollTrack = Hex(0x0f1820);      // the sliders' track
+            t.ScrollThumb = Hex(0x3b5d7d);
+            t.ScrollThumbHover = Hex(0x49b0f2);
             t.ButtonText = Hex(0xffffff);
             t.AccentText = Hex(0x08202f);
             t.FieldText = Hex(0xe3eef7);
@@ -237,6 +246,9 @@ namespace ModsLibCS1.UI
             t.TabIcon = Hex(0xcdd8e3);
             t.TabIconHover = Hex(0xffffff);
             t.TabIconSelected = Hex(0xffffff);   // white on the blue block (navy read as black)
+            t.ScrollTrack = new Color32(255, 255, 255, 26);
+            t.ScrollThumb = new Color32(255, 255, 255, 90);
+            t.ScrollThumbHover = new Color32(255, 255, 255, 170);
             t.ButtonText = Hex(0xffffff);
             t.AccentText = Hex(0xffffff);
             t.FieldText = Hex(0xffffff);
@@ -278,6 +290,9 @@ namespace ModsLibCS1.UI
             t.TabText = Hex(0xb9ddfe);
             t.TabHoverText = Hex(0xb9ddfe);
             t.TabSelectedText = Hex(0xffffff);
+            t.ScrollTrack = new Color32(0, 0, 0, 70);
+            t.ScrollThumb = new Color32(185, 221, 254, 140);
+            t.ScrollThumbHover = new Color32(185, 221, 254, 230);
             t.ButtonText = Hex(0xffffff);
             t.AccentText = Hex(0xffffff);
             t.FieldText = Hex(0x000000);

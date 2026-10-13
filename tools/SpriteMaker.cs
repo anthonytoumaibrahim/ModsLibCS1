@@ -73,6 +73,11 @@ public static class SpriteMaker
         sprites.Add(Icon("fold-open", 10, 6, ChevronDownCrop, Color.White, Lucide.ChevronDown));
         sprites.Add(Icon("fold-shut", 6, 10, ChevronRightCrop, Color.White, Lucide.ChevronRight));
 
+        // A scroll area's bar, every skin: a white pill, its track and its thumb tinted by the skin
+        // (Theme.ScrollTrack / ScrollThumb). Drawn 6 wide from these 8 (the 2-pixel middle goes);
+        // only its length stretches, so its ends stay round.
+        sprites.Add(Box("scroll", 8, 12, 3, Color.White, Color.White, Color.Transparent, 0, 3));
+
         // Tab icons (the new skins draw a tab as its icon, its name the tooltip), 24 px with a heavier
         // stroke than Lucide's 2 units (the author: bigger and thicker): "icon-" + Lucide's
         // name, white, tinted to the tab's text colour. A mod names the ones it wants.

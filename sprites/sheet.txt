@@ -28,7 +28,7 @@ st-seg-selected 229 86 16 16 6 6 6 6
 st-switch-off 68 63 32 18 0 0 0 0
 st-switch-on 103 63 32 18 0 0 0 0
 st-value 1 105 16 16 6 6 6 6
-st-tab-selected 235 162 8 8 0 0 0 2
+st-tab-selected 246 162 8 8 0 0 0 2
 st-rule 181 181 4 1 0 0 0 0
 st-hud 20 105 16 16 7 7 7 7
 st-hud-hover 39 105 16 16 7 7 7 7
@@ -101,7 +101,8 @@ fr-hud-hover 24 63 20 20 9 9 9 9
 white 174 181 4 4 0 0 0 0
 reset 70 162 16 16 0 0 0 0
 fold-open 78 181 10 6 0 0 0 0
-fold-shut 226 162 6 10 0 0 0 0
+fold-shut 237 162 6 10 0 0 0 0
+scroll 226 162 8 12 3 3 3 3
 icon-clock 211 1 24 24 0 0 0 0
 icon-cloud 1 36 24 24 0 0 0 0
 icon-cloudy 28 36 24 24 0 0 0 0
