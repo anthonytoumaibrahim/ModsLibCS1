@@ -46,9 +46,30 @@ nothing for players to subscribe to, and no mod ever runs another mod's copy.
 
    (The path assumes the csproj sits one folder below the repository root.)
 
-The props adds every `src\**\*.cs` file to the mod's compile and embeds the sprite sheet under the
-fixed names `ModsLibCS1.sheet.png` / `ModsLibCS1.sheet.txt`. The mod needs the usual game
-references (`Assembly-CSharp`, `ColossalManaged`, `ICities`, `UnityEngine`).
+   The props adds every `src\**\*.cs` file to the mod's compile and embeds the sprite sheet under
+   the fixed names `ModsLibCS1.sheet.png` / `ModsLibCS1.sheet.txt`. The mod needs the usual game
+   references (`Assembly-CSharp`, `ColossalManaged`, `ICities`, `UnityEngine`).
+
+3. Its own icons (tab icons), if it draws its tabs as icons. The library's sheet holds only what
+   every mod uses (the skins, the reset, fold, close and dropdown glyphs, the scroll bar); a mod's
+   icons are its own. List them in `<project>\Resources\PanelIcons.lucide.txt`, one per line, the
+   name and then each SVG path of the icon (Lucide's 24-unit grid; a circle or rect written as a
+   path), separated by ` | `:
+
+   ```
+   sun | M8 12a4 4 0 1 0 8 0a4 4 0 1 0 -8 0Z | M12 2v2 | M12 20v2 | ...
+   ```
+
+   then draw them, which writes `PanelIcons.png` + `PanelIcons.txt` beside the list:
+
+   ```
+   powershell -File ModsLibCS1\tools\make-icons.ps1 -Spec <project>\Resources\PanelIcons.lucide.txt
+   ```
+
+   The props embed those two files when both are there (`-p:ModsLibCS1Icons=<path without
+   extension>` points elsewhere), and the atlas merges them in: `AddTabStrip(..., icons)` asks for
+   `"icon-" + name` as before. Without them the tabs show their names. Credit the icons in the mod's
+   own notices.
 
 A library change reaches a mod only when that mod moves its submodule pointer and is rebuilt.
 
@@ -92,13 +113,14 @@ ModsLibCS1.props        imported by each mod's csproj
 src/UI/Builder.cs       every control, panel frame, tabs, KeepOnScreen
 src/UI/Theme.cs         one per skin: colours, sizes, the shape of toggles/choices/tabs/values
 src/UI/SkinSprites.cs   the sprite names each skin draws with (pure)
-src/UI/Atlas.cs         the library's UITextureAtlas, built once from the embedded sheet
+src/UI/Atlas.cs         the library's UITextureAtlas, built once from the embedded sheet (+ the mod's icons)
 src/UI/SheetTable.cs    reads sheet.txt (pure); ChoiceFit.cs: buttons or dropdown (pure)
 src/UI/Rows.cs          what each Add* returns; LibLog.cs, Skin.cs
 src/UI/Backdrop.cs      Frosted's blur: FrameGrab (the frame, shrunk) + Backdrop (drawn in the panel's outline)
 sprites/                sheet.png + sheet.txt -- generated, don't edit
 tools/make-sprites.ps1  draws every sprite (SpriteMaker.cs) and packs the sheet; deterministic
-tools/test-sheet.ps1    offline checks: table vs PNG, skins vs sheet, the fit rule
+tools/make-icons.ps1    draws a mod's own icons from its list into a sheet of its own (SpriteMaker.RunIcons)
+tools/test-sheet.ps1    offline checks: table vs PNG, skins vs sheet, no mod icons in it, icon lists, the fit rule
 tools/check/            compiles the library on its own against the installed game
 ```
 

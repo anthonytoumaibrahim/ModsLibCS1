@@ -5,6 +5,9 @@
 
   <PropertyGroup>
     <ModsLibCS1Dir>$(MSBuildThisFileDirectory)</ModsLibCS1Dir>
+    <!-- The mod's OWN icons (its tab icons), drawn by tools/make-icons.ps1 from its list
+         <name>.lucide.txt: <project>\Resources\PanelIcons.png + .txt unless the mod sets this. -->
+    <ModsLibCS1Icons Condition="'$(ModsLibCS1Icons)' == ''">$(MSBuildProjectDirectory)\Resources\PanelIcons</ModsLibCS1Icons>
   </PropertyGroup>
 
   <ItemGroup>
@@ -19,6 +22,13 @@
     <EmbeddedResource Include="$(ModsLibCS1Dir)sprites\sheet.txt"
                       LogicalName="ModsLibCS1.sheet.txt"
                       Condition="Exists('$(ModsLibCS1Dir)sprites\sheet.txt')" />
+    <!-- The mod's own icons, when it has them (both files): Atlas merges them into the atlas. -->
+    <EmbeddedResource Include="$(ModsLibCS1Icons).png"
+                      LogicalName="ModsLibCS1.icons.png"
+                      Condition="Exists('$(ModsLibCS1Icons).png') And Exists('$(ModsLibCS1Icons).txt')" />
+    <EmbeddedResource Include="$(ModsLibCS1Icons).txt"
+                      LogicalName="ModsLibCS1.icons.txt"
+                      Condition="Exists('$(ModsLibCS1Icons).png') And Exists('$(ModsLibCS1Icons).txt')" />
   </ItemGroup>
 
 </Project>

@@ -78,12 +78,64 @@ public static class SpriteMaker
         // only its length stretches, so its ends stay round.
         sprites.Add(Box("scroll", 8, 12, 3, Color.White, Color.White, Color.Transparent, 0, 3));
 
-        // Tab icons (the new skins draw a tab as its icon, its name the tooltip), 24 px with a heavier
-        // stroke than Lucide's 2 units (the author: bigger and thicker): "icon-" + Lucide's
-        // name, white, tinted to the tab's text colour. A mod names the ones it wants.
-        foreach (KeyValuePair<string, string[]> icon in Lucide.TabIcons)
-            sprites.Add(Icon("icon-" + icon.Key, 24, 24, FullGrid, Color.White, icon.Value, TabIconStroke));
+        // No tab icons here: they say what a mod is about, so each mod draws its own
+        // (RunIcons, tools/make-icons.ps1) and the atlas merges them in. Only glyphs every mod
+        // uses belong in this sheet.
+        return Write(sprites, pngPath, txtPath, "ModsLibCS1 sprite sheet, made by tools/make-sprites.ps1");
+    }
 
+    /// <summary>
+    /// A mod's own icons (tools/make-icons.ps1): every icon <paramref name="specPath"/> lists, drawn as
+    /// the tab icons are -- 24 px, white (tinted by whoever draws it), Lucide's paths stroked
+    /// <see cref="TabIconStroke"/> wide -- named "icon-" + its name, packed into a sheet of the mod's
+    /// own that ModsLibCS1.props embeds and Atlas merges into the library's atlas.
+    /// </summary>
+    /// <remarks>
+    /// The list: one icon per line, its name, then each path of it (an SVG path's d), all separated
+    /// by " | ". Blank lines and lines starting with '#' are skipped. Only paths: a Lucide circle or
+    /// rect is written as a path first (Lucide's own SVGs say which they have).
+    /// </remarks>
+    public static string RunIcons(string specPath, string pngPath, string txtPath)
+    {
+        List<Sprite> sprites = new List<Sprite>();
+        Dictionary<string, bool> seen = new Dictionary<string, bool>();
+        string[] lines = File.ReadAllLines(specPath);
+        for (int i = 0; i < lines.Length; i++)
+        {
+            string line = lines[i].Trim();
+            if (line.Length == 0 || line[0] == '#')
+                continue;
+
+            string[] parts = line.Split('|');
+            string name = parts[0].Trim();
+            List<string> paths = new List<string>();
+            for (int p = 1; p < parts.Length; p++)
+            {
+                string d = parts[p].Trim();
+                if (d.Length > 0)
+                    paths.Add(d);
+            }
+
+            string where = Path.GetFileName(specPath) + " line " + (i + 1);
+            if (name.Length == 0 || name.IndexOf(' ') >= 0 || paths.Count == 0)
+                throw new FormatException(where + ": a name without spaces, then its paths, all separated by ' | '");
+            if (seen.ContainsKey(name))
+                throw new FormatException(where + ": '" + name + "' listed twice");
+            seen[name] = true;
+
+            sprites.Add(Icon("icon-" + name, 24, 24, FullGrid, Color.White, paths.ToArray(), TabIconStroke));
+        }
+
+        if (sprites.Count == 0)
+            throw new FormatException(Path.GetFileName(specPath) + " lists no icon");
+
+        return Write(sprites, pngPath, txtPath, "A mod's own icons, made by ModsLibCS1's tools/make-icons.ps1 from " +
+                                                Path.GetFileName(specPath));
+    }
+
+    /// <summary>Packs the sprites into one sheet and writes it and its table (the format SheetTable reads).</summary>
+    private static string Write(List<Sprite> sprites, string pngPath, string txtPath, string header)
+    {
         int width, height;
         Pack(sprites, out width, out height);
 
@@ -96,7 +148,7 @@ public static class SpriteMaker
         }
 
         StringBuilder text = new StringBuilder();
-        text.Append("# ModsLibCS1 sprite sheet, made by tools/make-sprites.ps1. Do not edit by hand.\n");
+        text.Append("# " + header + ". Do not edit by hand.\n");
         text.Append("# name x y width height left right top bottom  (pixels; y from the TOP of the sheet)\n");
         text.Append("sheet " + width + " " + height + "\n");
         foreach (Sprite s in sprites)
@@ -378,53 +430,7 @@ public static class SpriteMaker
         public static readonly string[] ChevronRight = { "m9 18 6-6-6-6" };
         public static readonly string[] X = { "M18 6 6 18", "m6 6 12 12" };
 
-        /// <summary>The tab icons, by Lucide's name (the sprite is "icon-" + it).</summary>
-        public static readonly KeyValuePair<string, string[]>[] TabIcons =
-        {
-            new KeyValuePair<string, string[]>("clock", new[]
-            {
-                Circle(12, 12, 10), "M12 6L12 12L16 14",
-            }),
-            new KeyValuePair<string, string[]>("cloud", new[]
-            {
-                "M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z",
-            }),
-            new KeyValuePair<string, string[]>("cloudy", new[]
-            {
-                "M17.5 21H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z",
-                "M22 10a3 3 0 0 0-3-3h-2.207a5.502 5.502 0 0 0-10.702.5",
-            }),
-            new KeyValuePair<string, string[]>("cloud-fog", new[]
-            {
-                "M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242", "M16 17H7", "M17 21H9",
-            }),
-            new KeyValuePair<string, string[]>("cloud-rain", new[]
-            {
-                "M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242", "M16 14v6", "M8 14v6", "M12 16v6",
-            }),
-            new KeyValuePair<string, string[]>("cloud-sun-rain", new[]
-            {
-                "M12 2v2", "m4.93 4.93 1.41 1.41", "M20 12h2", "m19.07 4.93-1.41 1.41",
-                "M15.947 12.65a4 4 0 0 0-5.925-4.128", "M3 20a5 5 0 1 1 8.9-4H13a3 3 0 0 1 2 5.24",
-                "M11 20v2", "M7 19v2",
-            }),
-            new KeyValuePair<string, string[]>("sun", new[]
-            {
-                Circle(12, 12, 4), "M12 2v2", "M12 20v2", "m4.93 4.93 1.41 1.41", "m17.66 17.66 1.41 1.41",
-                "M2 12h2", "M20 12h2", "m6.34 17.66-1.41 1.41", "m19.07 4.93-1.41 1.41",
-            }),
-            new KeyValuePair<string, string[]>("lightbulb", new[]
-            {
-                "M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5",
-                "M9 18h6", "M10 22h4",
-            }),
-        };
-
-        private static string Circle(float cx, float cy, float r)
-        {
-            return string.Format(CultureInfo.InvariantCulture, "M{0} {1}a{2} {2} 0 1 0 {3} 0a{2} {2} 0 1 0 {4} 0Z",
-                cx - r, cy, r, 2f * r, -2f * r);
-        }
+        // A mod's own icons are in its own list (RunIcons): only glyphs every mod uses are here.
     }
 
     // The part of Lucide's grid a cropped glyph shows (its strokes included).

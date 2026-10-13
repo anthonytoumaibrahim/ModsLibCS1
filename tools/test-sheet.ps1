@@ -45,9 +45,12 @@ foreach ($skin in 'SeeThrough', 'GameBlue', 'Frosted') {
     foreach ($n in $sprites.All()) { $used[$n] = $true }
 }
 
-# Tab icons ("icon-" + a Lucide name) are offered to the mods, which name the ones they want.
-$unused = @($table.Entries | Where-Object { -not $used.ContainsKey($_.Name) -and -not $_.Name.StartsWith("icon-") } | ForEach-Object { $_.Name })
-Check "every sprite in the sheet is used by a skin (or is a tab icon)" ($unused.Count -eq 0) ($unused -join ', ')
+# A mod's icons ("icon-" + a name) are its own (tools/make-icons.ps1): the shared sheet holds only
+# what every mod uses.
+$icons = @($table.Entries | Where-Object { $_.Name.StartsWith("icon-") } | ForEach-Object { $_.Name })
+Check "the shared sheet holds no mod's icons" ($icons.Count -eq 0) ($icons -join ', ')
+$unused = @($table.Entries | Where-Object { -not $used.ContainsKey($_.Name) } | ForEach-Object { $_.Name })
+Check "every sprite in the sheet is used by a skin" ($unused.Count -eq 0) ($unused -join ', ')
 
 $v = [ModsLibCS1.UI.SkinSprites]::Vanilla()
 Check "Vanilla draws from the game's atlas" (-not $v.OwnSheet)
@@ -85,6 +88,41 @@ foreach ($k in $bad.Keys) {
 
 $ok = Parse "# comment`r`nsheet 16 16`r`n`r`na 0 0 8 8 3 3 3 3`r`nb 8 0 8 1 0 0 0 0"
 Check "CRLF, comments and blank lines read" ($null -ne $ok.Table -and $ok.Table.Entries.Count -eq 2 -and $ok.Table.Contains('b'))
+
+# ---- a mod's own icons (make-icons.ps1 -> SpriteMaker.RunIcons) ---------------------------------
+
+Add-Type -Path (Join-Path $PSScriptRoot 'SpriteMaker.cs') -ReferencedAssemblies System.Drawing
+$tmp = Join-Path ([IO.Path]::GetTempPath()) ("modslibcs1-icons-" + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory $tmp | Out-Null
+try {
+    $spec = Join-Path $tmp 'PanelIcons.lucide.txt'
+    $png = Join-Path $tmp 'PanelIcons.png'
+    $tab = Join-Path $tmp 'PanelIcons.txt'
+    [IO.File]::WriteAllText($spec, "# two icons`r`n`r`nminus | M5 12h14`r`nplus | M5 12h14 | M12 5v14`r`n")
+    [void][SpriteMaker]::RunIcons($spec, $png, $tab)
+    $first = (Get-FileHash $png).Hash
+    $r = Parse ([IO.File]::ReadAllText($tab))
+    Check "a mod's icon table parses" ($null -ne $r.Table) "$($r.Error)"
+    $names = @($r.Table.Entries | ForEach-Object { $_.Name })
+    Check "each icon listed is 'icon-' + its name, in order" (($names -join ',') -eq 'icon-minus,icon-plus') ($names -join ',')
+    $sizes = @($r.Table.Entries | Where-Object { $_.Width -ne 24 -or $_.Height -ne 24 })
+    Check "every icon is 24 x 24" ($sizes.Count -eq 0)
+    $img = [System.Drawing.Image]::FromFile($png)
+    Check "the icons' PNG matches their table's size" ($img.Width -eq $r.Table.Width -and $img.Height -eq $r.Table.Height) "$($img.Width)x$($img.Height)"
+    $img.Dispose()
+    [void][SpriteMaker]::RunIcons($spec, $png, $tab)
+    Check "drawn the same twice (deterministic)" ($first -eq (Get-FileHash $png).Hash)
+
+    foreach ($case in @(@('a name listed twice', "plus | M5 12h14`r`nplus | M12 5v14"), @('a name with no paths', "plus"), @('nothing listed', "# none"))) {
+        [IO.File]::WriteAllText($spec, $case[1])
+        $threw = $false
+        try { [void][SpriteMaker]::RunIcons($spec, $png, $tab) } catch { $threw = $true }
+        Check "refused: $($case[0])" $threw
+    }
+}
+finally {
+    Remove-Item -Recurse -Force $tmp
+}
 
 # ---- the choice-row fit rule ---------------------------------------------------------------
 

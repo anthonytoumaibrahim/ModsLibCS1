@@ -2,10 +2,11 @@
 
 ## Lucide
 
-The icons in `sprites/sheet.png` (the reset arrow, the folding arrows, the close cross, the
-dropdown arrow and every `icon-*` sprite) are drawn by `tools/SpriteMaker.cs` from the path data
-of [Lucide](https://lucide.dev) icons (lucide-static 0.460.0): rotate-ccw, chevron-down,
-chevron-right, x, clock, cloud, cloudy, cloud-fog, cloud-rain, cloud-sun-rain, sun, lightbulb.
+The glyphs in `sprites/sheet.png` (the reset arrow, the folding arrows, the close cross and the
+dropdown arrow) are drawn by `tools/SpriteMaker.cs` from the path data of
+[Lucide](https://lucide.dev) icons (lucide-static 0.460.0): rotate-ccw, chevron-down,
+chevron-right, x. A mod's own icons, drawn by `tools/make-icons.ps1` from the mod's own list, are
+credited in that mod's notices.
 
 ```
 ISC License
